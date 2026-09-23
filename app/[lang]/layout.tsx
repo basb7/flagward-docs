@@ -1,7 +1,9 @@
+import { i18nProvider } from 'fumadocs-ui/i18n';
 import { RootProvider } from 'fumadocs-ui/provider/next';
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import './global.css';
+import { translations } from '@/lib/layout.shared';
+import '../global.css';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -28,10 +30,15 @@ export const viewport: Viewport = {
   colorScheme: 'dark',
 };
 
-export default function Layout({ children }: LayoutProps<'/'>) {
+export default async function Layout({
+  params,
+  children,
+}: LayoutProps<'/[lang]'>) {
+  const { lang } = await params;
+
   return (
     <html
-      lang="en"
+      lang={lang}
       // Flagward ships one dark theme; `dark` is applied directly rather
       // than left to next-themes, and the nav's theme toggle is disabled
       // (see lib/layout.shared.tsx).
@@ -45,6 +52,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
             defaultTheme: 'dark',
             enableSystem: false,
           }}
+          i18n={i18nProvider(translations, lang)}
         >
           {children}
         </RootProvider>

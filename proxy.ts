@@ -1,8 +1,15 @@
+import { createI18nMiddleware } from 'fumadocs-core/i18n/middleware';
 import { isMarkdownPreferred, rewritePath } from 'fumadocs-core/negotiation';
-import { type NextRequest, NextResponse } from 'next/server';
+import type { NextFetchEvent, NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { i18n } from '@/lib/i18n';
 import { docsContentRoute, docsRoute } from '@/lib/shared';
 
 // Strip the trailing slash so a root `docsRoute` ('/') yields `{/*path}`.
+// `*path` also swallows a leading `/es` locale segment as-is, so these
+// patterns stay locale-agnostic: `/es/quickstart.md` rewrites to
+// `/llms.mdx/es/quickstart/content.md`, matching how `getPageMarkdownUrl`
+// (lib/shared.ts) encodes the locale for that route (outside `app/[lang]`).
 const docsPrefix = docsRoute.replace(/\/$/, '');
 
 const { rewrite: rewriteDocs } = rewritePath(
@@ -14,7 +21,16 @@ const { rewrite: rewriteSuffix } = rewritePath(
   `${docsContentRoute}{/*path}/content.md`,
 );
 
-export default function proxy(request: NextRequest) {
+// Matches the `NEXT_LOCALE` cookie name used by the landing site
+// (flagward-landing) for a consistent locale cookie across properties.
+const i18nMiddleware = createI18nMiddleware({
+  languages: i18n.languages,
+  defaultLanguage: i18n.defaultLanguage,
+  hideLocale: i18n.hideLocale,
+  cookieName: 'NEXT_LOCALE',
+});
+
+export default function proxy(request: NextRequest, event: NextFetchEvent) {
   const result = rewriteSuffix(request.nextUrl.pathname);
   if (result) {
     return NextResponse.rewrite(new URL(result, request.nextUrl));
@@ -31,7 +47,7 @@ export default function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return i18nMiddleware(request, event);
 }
 
 export const config = {

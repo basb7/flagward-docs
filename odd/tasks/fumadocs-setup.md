@@ -28,6 +28,8 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
 - [x] T2 — Apply Flagward branding (dark palette, logo, favicon, nav title/links).
 - [x] T3 — Initial content skeleton sourced from real READMEs, with framework tabs for SDK examples.
 - [x] T4 — Serve docs at the site root (deployment target `docs.flagward.com`): drop the `/docs` prefix from pages, OG images, markdown routes, proxy rewrites, and content links. Route: direct inline (mechanical, already understood).
+- [x] T5 — i18n infrastructure (`en` default, `es`): `defineI18n` with `hideLocale: 'default-locale'` and English fallback, `app/[lang]` routing, proxy combining i18n middleware with markdown rewrites, locale-aware search/OG/llms routes, Spanish UI translations, language switcher. Route: delegated direct (writer trigger: 2+ non-trivial files).
+- [ ] T6 — Spanish translations for Introduction and Quickstart (neutral professional Spanish). SDK and self-hosting pages fall back to English for now. Route: delegated direct (same writer).
 
 ## Acceptance criteria
 
@@ -147,9 +149,85 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
 - Range `e45deb3..54717f6` (T2+T3): assessed medium (`slice_budget_reached`), consent granted, lineage `review-3f23edc4c0fbd8a1` approved and acknowledged. T1 (root commit) is outside the reviewed range.
 - Non-blocking follow-ups: `metadataBase` placeholder domain in `app/layout.tsx` (read from env); Solid example in `content/docs/sdks/solid.mdx` calls `value()` outside a tracking scope.
 
+- T5 done: i18n infrastructure (`en` default, `es`) per the current Fumadocs
+  Next.js i18n guide (context7 `/fuma-nama/fumadocs`, `internationalization/next.mdx`,
+  confirmed against installed `fumadocs-core`/`fumadocs-ui` types).
+  - `lib/i18n.ts` (new): `defineI18n({ languages: ['en', 'es'], defaultLanguage:
+    'en', hideLocale: 'default-locale' })`. `fallbackLanguage` left unset — it
+    defaults to `defaultLanguage`, which is the required English fallback.
+    Also exports `splitLocaleSlug`/`withLocaleSegment`, used by the `/og` and
+    `/llms.mdx` route handlers (see below).
+  - `lib/source.ts`: `loader({ ..., i18n })`.
+  - Moved `app/layout.tsx`, `app/(docs)/layout.tsx`,
+    `app/(docs)/[[...slug]]/page.tsx` under `app/[lang]/...` (route handlers —
+    `api/search`, `og`, `llms.mdx`, `llms.txt`, `llms-full.txt` — stay outside,
+    per the guide). Root `[lang]` layout sets `<html lang={lang}>` and passes
+    `i18n={i18nProvider(translations, lang)}` to `RootProvider`; docs layout
+    passes `source.getPageTree(lang)` and `baseOptions(lang)`; the page passes
+    `lang` to `source.getPage`/`generateMetadata`.
+  - `lib/layout.shared.tsx`: `translations = i18n.translations()
+    .extend(uiTranslations()).add({ en: { displayName: 'English' }, es: {
+    displayName: 'Español', ...all fumadocs-ui chrome keys } })` — neutral
+    professional Spanish for every key `fumadocs-ui`'s `.translations/keys.js`
+    exposes (search, pagination, page actions, 404, table of contents, etc.).
+    `baseOptions` now takes `locale` (unused beyond the signature — nav title
+    is the brand name, same in both languages). The language switcher needed
+    no extra wiring: in this version it renders automatically from the
+    `locales` fumadocs-ui derives off `translations` once `i18n={...}` reaches
+    `RootProvider` (`DocsLayout`'s `i18n` prop is deprecated/optional now).
+  - `proxy.ts`: kept the existing markdown-negotiation rewrites (they're
+    locale-agnostic — `*path` already swallows a leading `/es`) and added
+    `createI18nMiddleware({ languages, defaultLanguage, hideLocale,
+    cookieName: 'NEXT_LOCALE' })` as the fallthrough, so the site-wide locale
+    cookie name matches `flagward-landing`. Same `matcher` exclusions as T4.
+  - `app/og/[...slug]/route.tsx` and `app/llms.mdx/[[...slug]]/route.ts`: these
+    route handlers live outside `app/[lang]`, so the locale (when non-default)
+    is encoded as the *first* slug segment instead of a URL prefix before the
+    route name (`/llms.mdx/es/quickstart/content.md`, `/og/es/quickstart/image.png`)
+    — the same pattern used in fumadocs' own Waku OG-image i18n example.
+    `getPageMarkdownUrl`/`getPageImageUrl` (`lib/shared.ts`) build that via the
+    new `withLocaleSegment` helper (not `createGetUrl`'s own `i18n` param,
+    which prepends the locale *before* the base route — wrong direction for a
+    route handler outside `[lang]`). The handlers parse it back with
+    `splitLocaleSlug` and call `source.getPage(slug, locale)`.
+  - `app/api/search/route.ts`: unchanged. Per the Fumadocs docs
+    ("Internationalization" in `headless/search/orama.mdx`), Orama search
+    supports all languages by default via Unicode word segmentation with no
+    extra config — verified against the running server: `GET
+    /api/search?query=flag&locale=es` returns results scoped to `/es/...`
+    URLs. **Tokenizer decision: keep the `createFromSource(source)` default
+    (no `localeMap`/`tokenizer` override)** — Spanish is a Latin-script
+    language the default segmentation already handles; a custom tokenizer is
+    documented only for languages needing different handling (e.g. CJK).
+  - `llms.txt`/`llms-full.txt` (`app/llms.txt`, `app/llms-full.txt`):
+    unchanged — `docsLlms.index()` already renders a section per language
+    when `lang` is omitted and i18n is configured (built into `llms()`); left
+    `full()` as-is too (out of scope: no acceptance check asked for a
+    locale-specific `llms-full.txt`).
+  - Fixed in passing: `generateStaticParams` in the `/og` and `/llms.mdx`
+    routes had an inert `lang: page.locale` key (the routes have no `[lang]`
+    segment, so Next.js ignored it) — dropped now that the locale is baked
+    into `segments` instead.
+  - Added the requested `// TODO:` above `gitConfig` in `lib/shared.ts` noting
+    the docs repo URL is pending (content lives in `flagward-docs`, which has
+    no remote yet); left `gitConfig` and the "Edit on GitHub" link logic
+    itself untouched, as instructed.
+  - `npm run build`: pass. `npm run lint`: pass (Biome auto-fixed formatting
+    on the new/changed files; same 2 pre-existing non-blocking `!important`
+    warnings in the scaffold's scroll-lock CSS as T1–T4).
+  - Verification (production server, port 3124): 200 on `/`, `/quickstart`,
+    `/sdks/react`, `/es`, `/es/quickstart`, `/es/sdks/react` (fallback),
+    `/quickstart.md`, `/es/quickstart.md`, `/llms.mdx/quickstart/content.md`,
+    `/llms.mdx/es/quickstart/content.md`, `/og/quickstart/image.png`,
+    `/og/es/quickstart/image.png`, `/llms.txt`, `/llms-full.txt`,
+    `/api/search?query=flag`, `/logo.png`. `Accept: text/markdown` on
+    `/es/quickstart` returns Markdown (`# Quickstart (/es/quickstart)`).
+    `/es/quickstart` HTML has `lang="es"`; `/quickstart` HTML has `lang="en"`.
+    `/en/quickstart` → 307 redirect (to `/quickstart`, per `hideLocale:
+    'default-locale'`).
+  - Commit: see git log (`feat: add english and spanish i18n`).
+
 ## Next step
 
-None — T1, T2, and T3 are complete. Acceptance criteria (`npm run build`,
-`npm run lint`, `/docs` renders with sidebar/search/branding) are met.
-Deferred/out of scope per the feature's Scope section: versioning, an OpenAPI
-reference, a TypeDoc reference, i18n, deployment.
+T6 — Spanish translations of `content/docs/index.mdx` and
+`content/docs/quickstart.mdx`.
