@@ -1,0 +1,134 @@
+---
+title: Solid
+description: '@flagward/solid — provider, useFlag y useFlags.'
+---
+
+## Instalación
+
+```bash
+npm install @flagward/solid
+```
+
+Requiere Solid 1.8 o más reciente. `@flagward/core` viene incluido — no lo
+instalas por separado.
+
+## Guía rápida
+
+Envuelve la app en el provider una sola vez:
+
+```tsx
+// index.tsx
+import { render } from 'solid-js/web';
+import { FlagwardProvider } from '@flagward/solid';
+import App from './App';
+
+render(
+  () => (
+    <FlagwardProvider apiKey="your-environment-api-key" host="https://flags.example.com">
+      <App />
+    </FlagwardProvider>
+  ),
+  document.getElementById('root')!,
+);
+```
+
+Luego pide una flag donde de verdad se toma la decisión:
+
+```tsx
+import { useFlag } from '@flagward/solid';
+
+function Checkout() {
+  const { value, isLoading } = useFlag('new-checkout');
+
+  return (
+    <Switch>
+      <Match when={isLoading()}>
+        <LegacyCheckout />
+      </Match>
+      <Match when={value()}>
+        <NewCheckout />
+      </Match>
+      <Match when={!value()}>
+        <LegacyCheckout />
+      </Match>
+    </Switch>
+  );
+}
+```
+
+## El valor es un accessor
+
+Los hooks devuelven `Accessor`s, así que llamarlos dentro del JSX mantiene
+el tracking de grano fino sobre el que está construido Solid:
+
+```tsx
+const { value } = useFlag('new-checkout');
+
+return (
+  <Show when={value()} fallback={<LegacyCheckout />}>
+    <NewCheckout />
+  </Show>
+);
+```
+
+Un `if (value())` plano en el cuerpo del componente se ejecuta una sola
+vez, fuera de cualquier scope de tracking, así que no vuelve a ejecutarse
+cuando la flag cambia. Lee el accessor dentro del JSX, de `createMemo` o de
+`createEffect` cuando el resultado deba mantenerse en vivo.
+
+## El contexto puede ser reactivo
+
+En todo lugar donde se toma un contexto — el provider, `useFlag`,
+`getFlag` — acepta una signal o un getter plano tan fácilmente como un
+objeto plano:
+
+```tsx
+const [user, setUser] = createSignal({ plan: 'standard' });
+const { value } = useFlag('beta', user);
+
+setUser({ plan: 'pro' }); // la flag se reevalúa, el DOM se actualiza
+```
+
+## Hooks
+
+Recurre a `useFlag`. `useFlags` se gana su lugar cuando las claves no se
+conocen donde escribes el código, cuando necesitas una flag donde un hook
+no puede ir (`getFlag` funciona en cualquier lugar), o cuando un componente
+lee varias flags:
+
+```tsx
+const { flags, isLoading, error, getFlag } = useFlags();
+
+flags(); // { "new-checkout": true, ... }
+getFlag('beta'); // una flag, contexto de la app
+getFlag('beta', { plan: 'pro' }); // una flag, este contexto
+```
+
+### De dónde viene el contexto
+
+```tsx
+<FlagwardProvider apiKey={apiKey} context={user}> // quién es el usuario
+useFlag('beta', { plan: 'pro' }) // solo esta llamada
+```
+
+Un contexto pasado a `useFlag` pertenece únicamente a esa llamada — no se
+publica en ningún lugar, y el mapa que devuelve `useFlags` se resuelve solo
+contra el contexto del provider.
+
+## Perder la red
+
+El provider abre un stream de SSE y lo mantiene sincronizado por sí solo:
+una flag cambiada en el servidor llega a cada componente en menos de un
+segundo, volver a estar en línea vuelve a leer las flags, y donde no hay
+`EventSource` — renderizado en servidor, Node plano — las actualizaciones
+en vivo se reportan como apagadas mientras las flags ya leídas siguen
+funcionando.
+
+## Fuera de Solid
+
+```ts
+import { FlagwardClient, evaluateFlag } from '@flagward/solid';
+```
+
+El cliente y el evaluador se reexportan aquí, así que un store, un route
+guard, o un módulo plano pueden usarlos sin un componente.

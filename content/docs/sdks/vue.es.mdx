@@ -1,0 +1,127 @@
+---
+title: Vue
+description: '@flagward/vue — plugin, useFlag y useFlags.'
+---
+
+## Instalación
+
+```bash
+npm install @flagward/vue
+```
+
+Requiere Vue 3.5 o más reciente. `@flagward/core` viene incluido — no lo
+instalas por separado.
+
+## Guía rápida
+
+Instala el plugin una sola vez, en la app:
+
+```ts
+// main.ts
+import { createApp } from 'vue';
+import { flagward } from '@flagward/vue';
+import App from './App.vue';
+
+createApp(App)
+  .use(
+    flagward({
+      apiKey: 'your-environment-api-key',
+      host: 'https://flags.example.com',
+    }),
+  )
+  .mount('#app');
+```
+
+Luego pide una flag donde de verdad se toma la decisión:
+
+```vue
+<script setup lang="ts">
+import { useFlag } from '@flagward/vue';
+
+const { value, isLoading } = useFlag('new-checkout');
+</script>
+
+<template>
+  <LegacyCheckout v-if="isLoading" />
+  <NewCheckout v-else-if="value" />
+  <LegacyCheckout v-else />
+</template>
+```
+
+Nada tiene que envolverse — una flag se pide donde se toma la decisión, no
+donde alguien recordó poner un provider.
+
+## El valor es un ref
+
+Los composables devuelven `ComputedRef`s, así que desestructurar mantiene
+la reactividad. Los templates los desenvuelven por ti; en `<script>` lee
+`.value`:
+
+```ts
+const { value } = useFlag('new-checkout');
+
+if (value.value) {
+  /* ... */
+}
+```
+
+## El contexto puede ser reactivo
+
+En todo lugar donde se toma un contexto — el plugin, `useFlag`, `getFlag`
+— acepta un ref o un getter tan fácilmente como un objeto plano:
+
+```ts
+const user = ref({ plan: 'standard' });
+const { value } = useFlag('beta', user);
+
+user.value = { plan: 'pro' }; // la flag se reevalúa, el DOM se actualiza
+```
+
+Esto importa porque lo que una aplicación usa como objetivo no es fijo:
+alguien inicia sesión, cambia de plan, cambia de idioma. Un contexto leído
+una sola vez al arrancar respondería cada evaluación posterior con lo que
+era cierto al arrancar.
+
+## Composables
+
+Recurre a `useFlag`. `useFlags` se gana su lugar cuando las claves no se
+conocen donde escribes el código, cuando necesitas una flag donde un
+composable no puede ir (`getFlag` funciona en cualquier lugar), o cuando un
+componente lee varias flags:
+
+```ts
+const { flags, isLoading, error, getFlag } = useFlags();
+
+flags.value; // { "new-checkout": true, ... }
+getFlag('beta'); // una flag, contexto de la app
+getFlag('beta', { plan: 'pro' }); // una flag, este contexto
+```
+
+### De dónde viene el contexto
+
+```ts
+app.use(flagward({ apiKey, context: user })); // quién es el usuario
+useFlag('beta', { plan: 'pro' }); // solo esta llamada
+```
+
+Un contexto pasado a `useFlag` pertenece únicamente a esa llamada — no se
+publica en ningún lugar, y el mapa que devuelve `useFlags` se resuelve solo
+contra el contexto del plugin.
+
+## Perder la red
+
+El plugin abre un stream de SSE y lo mantiene sincronizado por sí solo: una
+flag cambiada en el servidor llega a cada componente en menos de un
+segundo, volver a estar en línea vuelve a leer las flags, y donde no hay
+`EventSource` — renderizado en servidor, Node plano — las actualizaciones
+en vivo se reportan como apagadas mientras las flags ya leídas siguen
+funcionando.
+
+## Fuera de Vue
+
+```ts
+import { FlagwardClient, evaluateFlag } from '@flagward/vue';
+```
+
+El cliente y el evaluador se reexportan aquí, así que un store, un router
+guard, o un módulo plano pueden usarlos sin un componente.

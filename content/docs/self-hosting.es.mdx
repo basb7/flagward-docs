@@ -1,0 +1,156 @@
+---
+title: Autoalojamiento
+description: Ejecuta Flagward con Docker Compose.
+---
+
+<Callout type="warn">
+  Flagward viene con valores por defecto de desarrollo para que funcione de
+  inmediato. **No** son seguros para un despliegue — revisa `SECURITY.md`
+  en el [repositorio de flagward](https://github.com/basb7/flagward) antes
+  de exponer una instancia.
+</Callout>
+
+## Docker (recomendado)
+
+```bash
+git clone https://github.com/basb7/flagward.git
+cd flagward
+
+# Modo desarrollo: hot-reload, debug activado, runserver (reinicio automático en cambios)
+docker compose -f compose.dev.yml up
+
+# Modo producción: Gunicorn con 4 workers, debug desactivado, optimizado
+docker compose up
+```
+
+**Servicios:**
+
+| Servicio | URL |
+| --- | --- |
+| Frontend (panel) | http://localhost:3000 |
+| API del backend | http://localhost:8000 |
+| Django Admin | http://localhost:8000/admin/ |
+| PostgreSQL | localhost:5432 |
+| Redis | localhost:6379 |
+
+### Archivos Compose
+
+| Archivo | Modo | Descripción |
+| --- | --- | --- |
+| `compose.dev.yml` | Desarrollo | Hot-reload, debug, `runserver` |
+| `compose.yml` | Producción | Gunicorn, optimizado, seguro |
+
+```bash
+docker compose -f compose.dev.yml up      # desarrollo, hot-reload
+docker compose -f compose.dev.yml up -d   # desarrollo, en segundo plano
+docker compose up                          # producción
+docker compose up -d                       # producción, en segundo plano
+docker compose down                        # detiene todos los servicios
+docker compose down -v                     # detiene y elimina los volúmenes
+docker compose logs -f backend             # ver logs del backend
+docker compose build --no-cache            # reconstruir las imágenes
+```
+
+## Configuración
+
+Copia `.env.example` a `.env` y configúralo:
+
+```bash
+cp .env.example .env
+```
+
+El archivo se lee al arrancar, tanto en desarrollo como en producción, y se
+resuelve junto a `manage.py` en lugar de desde el directorio de trabajo.
+Los valores ya presentes en el entorno prevalecen sobre el archivo — un
+contenedor que establece `DB_HOST` mediante compose lo conserva aunque un
+`.env` haya llegado a la imagen.
+
+Algunos de los ajustes que conviene conocer antes de desplegar:
+
+| Variable | Descripción | Por defecto |
+| --- | --- | --- |
+| `SECRET_KEY` | Clave secreta de Django | `django-insecure-dev-key-change-in-production` |
+| `DEBUG` | Modo debug | `True` |
+| `DEFAULT_ORGANIZATION_PLAN` | El plan con el que se crea una organización nueva: `COMMUNITY` (ilimitado), `FREE`, `STARTER`, o `TEAM`. La única diferencia entre una instalación autoalojada y una alojada. | `COMMUNITY` |
+| `DB_NAME` | Base de datos PostgreSQL. **Establecer esto (o `USE_POSTGRES`) es lo que selecciona PostgreSQL**; sin ninguno de los dos, la app recurre a SQLite en `db.sqlite3`. | sin establecer (SQLite) |
+| `REDIS_URL` | Backend de caché. Sin establecer, Django usa una caché en el propio proceso — correcto para un único servidor de desarrollo, incorrecto para más de un proceso. | sin establecer |
+| `REDIS_STREAMS_URL` | Respalda el stream de cambios de flags hacia los SDKs conectados. Sin establecer, las flags se siguen evaluando; lo que se detiene es la propagación en vivo. | sin establecer |
+| `ALLOWED_HOSTS` | Dominios permitidos | `localhost,127.0.0.1` |
+| `CORS_ALLOWED_ORIGINS` | Orígenes CORS | `http://localhost:3000` |
+| `CSRF_TRUSTED_ORIGINS` | Orígenes CSRF | `http://localhost:3000` |
+| `FRONTEND_BASE_URL` | Dónde vive el frontend; se usa para construir enlaces en el correo de restablecimiento de contraseña y en la respuesta de creación de invitaciones. | `http://localhost:3000` |
+
+El correo (`EMAIL_HOST` y afines) es completamente opcional; una instancia
+autoalojada sigue funcionando sin nada de eso configurado. Con `EMAIL_HOST`
+sin establecer y `DEBUG=True`, el correo saliente se imprime en la terminal
+en lugar de enviarse, así que el flujo de restablecimiento de contraseña se
+puede probar sin un servidor de correo. Consulta el
+[README de flagward](https://github.com/basb7/flagward#environment-variables)
+para la referencia completa de variables.
+
+## Despliegue en producción
+
+1. Prepara tu servidor (AWS, GCP, DigitalOcean, etc.).
+2. Clona el repositorio y ejecuta `cp .env.example .env`, luego edítalo con
+   tus valores de producción.
+3. `docker compose up -d`.
+4. Verifica con `docker compose ps` y `docker compose logs backend`.
+5. Pon Nginx o Traefik delante con un certificado TLS (Let's Encrypt).
+
+## Desarrollo local (sin Docker)
+
+Requisitos previos: Python 3.14+, Node.js 20+.
+
+```bash
+# Backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements/base.txt
+pip install -r requirements/dev.txt
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+
+# Frontend (en otra terminal)
+cd frontend
+npm install
+npm run dev
+```
+
+## Creando tu primera flag [#creating-your-first-flag]
+
+1. **Regístrate** en `http://localhost:3000/register` — usuario, correo,
+   contraseña. Este no es tu superusuario: el superusuario administra el
+   despliegue a través de Django admin y no tiene membresía en ningún
+   lugar, así que el panel no le muestra nada. Quien se registra se
+   convierte en el `ADMIN` de las organizaciones que crea.
+2. **Crea tu organización** — el panel pide una en cuanto llegas sin
+   ninguna.
+3. **Crea un proyecto** — nav → New project. Sin clave que inventar: el
+   servidor la deriva a partir del nombre.
+4. **Crea un entorno** — Environments → New Environment. La clave de API
+   se genera automáticamente y se puede copiar desde la tabla.
+5. **Crea una feature flag** — Flags → New Flag, elige el entorno, dale
+   una clave y un nombre.
+6. **Actívala** — cambia el interruptor en la columna Status.
+7. **Añade reglas y condiciones** (opcional) — menú de la fila → Rules →
+   New Rule, y luego una condición como `country Equals US`.
+8. **Míralo funcionar** — Monitoring muestra qué SDKs están conectados. No
+   mostrará evaluaciones de un cliente que evalúa localmente, que es lo que
+   hacen los SDKs de JavaScript — esos nunca llegan al servidor.
+
+### Matar una flag durante un incidente
+
+No recurras al interruptor propio de la flag — eso edita su diseño y pierde
+el estado en el que estaba. En su lugar, ve a **Monitoring → Overrides →
+New override**, elige la flag, selecciona `Disabled (kill switch)`, y
+escribe el motivo. La flag se fuerza a apagada de inmediato, para todos,
+ignorando sus reglas de segmentación. Pulsa **Lift** cuando termine el
+incidente y la flag vuelve exactamente a la configuración que tenía.
+
+<Callout type="info">
+  La referencia completa de la API (endpoints, formas de
+  request/response, modelos) todavía no forma parte de este sitio — mientras
+  tanto, consulta el
+  [README de flagward](https://github.com/basb7/flagward).
+</Callout>

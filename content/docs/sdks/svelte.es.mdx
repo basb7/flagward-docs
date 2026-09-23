@@ -1,0 +1,142 @@
+---
+title: Svelte
+description: '@flagward/svelte — setFlagward, useFlag y useFlags.'
+---
+
+## Instalación
+
+```bash
+npm install @flagward/svelte
+```
+
+Funciona con Svelte 4 o 5. `@flagward/core` viene incluido — no lo instalas
+por separado.
+
+## Guía rápida
+
+Llama a `setFlagward` una sola vez, en el `<script>` de un componente raíz
+— un `+layout.svelte` de SvelteKit es el lugar habitual:
+
+```svelte
+<!-- +layout.svelte -->
+<script lang="ts">
+  import { setFlagward } from '@flagward/svelte';
+
+  setFlagward({
+    apiKey: 'your-environment-api-key',
+    host: 'https://flags.example.com',
+  });
+</script>
+
+<slot />
+```
+
+Luego pide una flag donde de verdad se toma la decisión:
+
+```svelte
+<!-- Checkout.svelte -->
+<script lang="ts">
+  import { useFlag } from '@flagward/svelte';
+
+  const flag = useFlag('new-checkout');
+</script>
+
+{#if $flag.isLoading}
+  <LegacyCheckout />
+{:else if $flag.value}
+  <NewCheckout />
+{:else}
+  <LegacyCheckout />
+{/if}
+```
+
+Nada tiene que envolverse en un componente provider — una flag se pide
+donde se toma la decisión, no donde alguien recordó configurarla.
+`<slot />` es la forma de Svelte 4; en Svelte 5 es `{@render children()}`.
+
+## El resultado es un store de un objeto
+
+`useFlag` y `useFlags` devuelven cada uno un único `Readable` cuyo valor es
+un objeto plano. Desestructurar el store perdería la reactividad, así que
+léelo a través del prefijo `$`:
+
+```ts
+const flag = useFlag('new-checkout');
+// $flag.value, $flag.isLoading, $flag.error
+```
+
+## El contexto puede ser un store
+
+En todo lugar donde se toma un contexto — `setFlagward`, `useFlag`,
+`useFlags` — acepta un store tan fácilmente como un objeto plano:
+
+```ts
+import { writable } from 'svelte/store';
+
+const user = writable({ plan: 'standard' });
+const flag = useFlag('beta', user);
+
+user.set({ plan: 'pro' }); // la flag se reevalúa, el DOM se actualiza
+```
+
+## `createFlagward` — la vía de escape manual
+
+`setFlagward` necesita el `<script>` de un componente. Donde no hay
+componente — un módulo plano, un test, un `load` de SvelteKit que se
+ejecuta antes de que monte cualquier layout — `createFlagward` construye el
+mismo estado sin ese requisito, y tú te encargas de llamar a `destroy()` tú
+mismo:
+
+```ts
+import { createFlagward, flagStore } from '@flagward/svelte';
+
+const flagward = createFlagward({ apiKey: 'your-environment-api-key' });
+const flag = flagStore(flagward, 'beta');
+
+// más adelante, cuando termines con él
+flagward.destroy();
+```
+
+## SvelteKit
+
+Funciona sin nada que configurar — `setFlagward` en `+layout.svelte`,
+`useFlag` donde se tome la decisión. Un componente se renderiza en el
+servidor en la primera solicitud y de nuevo al hidratarse, así que
+`setFlagward` se ejecuta en ambos lugares; el HTML entrega el estado de
+carga, y el valor real aparece en cuanto el navegador construye su propio
+cliente.
+
+Para resolverlo también en el servidor (evitando ese destello), lee la flag
+con el núcleo en una función `load` en su lugar:
+
+```ts
+// +page.server.ts
+import { FlagwardClient } from '@flagward/svelte';
+import { env } from '$env/dynamic/private';
+
+export async function load() {
+  const client = new FlagwardClient({ apiKey: env.FLAGWARD_API_KEY, logLevel: 'silent' });
+  await client.init();
+  return { newCheckout: client.getFlag('new-checkout') };
+}
+```
+
+Esa clave no lleva prefijo `PUBLIC_`, así que nunca llega al navegador. La
+contrapartida es que una flag resuelta en el servidor no sigue el stream de
+SSE — un cambio llega en la siguiente solicitud en lugar de dentro del
+segundo.
+
+## Opciones
+
+| Opción | Tipo | Por defecto |
+| --- | --- | --- |
+| `apiKey` | `string` | — requerido |
+| `host` | `string` | `https://app.flagward.com` |
+| `context` | `UserContext \| Readable<UserContext>` | `{}` |
+| `logLevel` | `"warn" \| "error" \| "silent"` | `"warn"` |
+
+## Fuera de Svelte
+
+```ts
+import { FlagwardClient, evaluateFlag } from '@flagward/svelte';
+```

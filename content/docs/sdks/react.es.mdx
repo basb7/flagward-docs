@@ -1,0 +1,158 @@
+---
+title: React
+description: '@flagward/react — provider, useFlag y useFlags.'
+---
+
+## Instalación
+
+```bash
+npm install @flagward/react
+```
+
+> Publicado como `flagward-sdk-react` hasta la versión 0.2.0. Mismo paquete,
+> misma API — se movió al scope `@flagward` para que cada SDK de esta
+> familia comparta un namespace que el proyecto realmente posee.
+
+## Guía rápida
+
+```tsx
+import { FlagwardProvider, useFlag } from '@flagward/react';
+
+function App() {
+  return (
+    <FlagwardProvider apiKey="your-api-key">
+      <Dashboard />
+    </FlagwardProvider>
+  );
+}
+
+function Dashboard() {
+  const { value: showNewUI } = useFlag('show-new-ui');
+
+  return showNewUI ? <NewDashboard /> : <OldDashboard />;
+}
+```
+
+## Hooks
+
+Recurre a `useFlag`. Una flag, una decisión, un hook — es lo que la mayoría
+de los componentes necesitan:
+
+```tsx
+const { value, isLoading, error } = useFlag('new-checkout');
+```
+
+`useFlags` se gana su lugar en tres casos: las claves no se conocen donde
+escribes el código (un panel de depuración, una vista de administración);
+necesitas una flag donde un hook no puede ir (un event handler, un callback,
+una rama condicional — los hooks no pueden ser condicionales, `getFlag`
+sí); o un componente lee varias flags y una sola llamada se lee mejor que
+cinco.
+
+```tsx
+const { flags, isLoading, error, getFlag } = useFlags();
+
+flags; // { "new-checkout": true, ... }
+getFlag('show-banner'); // una flag, el contexto del provider
+getFlag('show-banner', { plan: 'pro' }); // una flag, más este contexto
+```
+
+### De dónde viene el contexto
+
+```tsx
+<FlagwardProvider context={{ plan: 'free' }}> // quién es el usuario
+useFlag('beta', { plan: 'pro' }) // solo esta llamada
+```
+
+Un contexto pasado a `useFlag` pertenece únicamente a esa llamada — no se
+publica en ningún lugar, y `useFlags().flags` se resuelve solo contra el
+contexto del provider. Pon al usuario en el provider (plan, país, id,
+idioma — lo que sea que tus reglas evalúen), y recurre al contexto por
+llamada cuando lo que estás evaluando *no* es el usuario actual, como una
+fila en una lista:
+
+```tsx
+users.map((u) => (
+  <Row key={u.id} badge={getFlag('premium-badge', { plan: u.plan })} />
+));
+```
+
+## Provider
+
+```tsx
+<FlagwardProvider
+  apiKey="your-api-key"
+  host="https://flags.example.com" // opcional, por defecto https://app.flagward.com
+  context={{ userId: '123' }} // opcional, usado para evaluar las reglas de segmentación
+  logLevel="warn" // opcional: "warn" | "error" | "silent"
+>
+  {children}
+</FlagwardProvider>
+```
+
+## Next.js
+
+El App Router funciona sin ningún wrapper propio — el provider y los hooks
+declaran `"use client"`, así que esto se importa directamente en un layout:
+
+```tsx
+// app/layout.tsx
+import { FlagwardProvider } from '@flagward/react';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        <FlagwardProvider apiKey={process.env.NEXT_PUBLIC_FLAGWARD_API_KEY!}>
+          {children}
+        </FlagwardProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+En un componente de servidor, los hooks no se ejecutan, pero el cliente sí
+— recurre a `@flagward/core` directamente (ya instalado como dependencia de
+este paquete):
+
+```tsx
+// app/page.tsx
+import { FlagwardClient } from '@flagward/core';
+
+export default async function Page() {
+  const client = new FlagwardClient({ apiKey: process.env.FLAGWARD_API_KEY! });
+  await client.init();
+
+  return client.evaluate('new-checkout', { plan: 'pro' }) ? <NewCheckout /> : <LegacyCheckout />;
+}
+```
+
+`FlagwardProvider` inicia su primera lectura en un efecto, que no se ejecuta
+en el servidor: el HTML renderizado en el servidor siempre lleva
+`isLoading: true`, con un destello de tu fallback hasta que el navegador
+toma el control. Pasar un snapshot del servidor al cliente es trabajo
+pendiente.
+
+## Perder la red
+
+Las flags se leen una vez y se evalúan localmente, así que un cliente que
+pierde su conexión sigue funcionando — solo no puede notar un cambio hasta
+que la red vuelve o la pestaña pasa a primer plano de nuevo, momento en el
+que el SDK vuelve a leer las flags.
+
+## Cliente independiente
+
+```ts
+import { FlagwardClient } from '@flagward/react';
+
+const client = new FlagwardClient({ apiKey: 'your-api-key' });
+await client.init();
+
+client.cachedFlags; // estado configurado on/off, sin reglas de segmentación aplicadas
+client.evaluate('show-banner', { plan: 'premium' }); // reglas de segmentación aplicadas contra este contexto
+client.getFlag('maintenance-mode'); // lo mismo, sin contexto, nunca lanza un error
+
+client.connect(); // mantiene el snapshot actualizado vía SSE
+client.disconnect(); // lo cierra cuando termines
+```

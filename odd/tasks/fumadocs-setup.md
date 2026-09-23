@@ -31,7 +31,7 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
 - [x] T5 — i18n infrastructure (`en` default, `es`): `defineI18n` with `hideLocale: 'default-locale'` and English fallback, `app/[lang]` routing, proxy combining i18n middleware with markdown rewrites, locale-aware search/OG/llms routes, Spanish UI translations, language switcher. Route: delegated direct (writer trigger: 2+ non-trivial files).
 - [x] T6 — Spanish translations for Introduction and Quickstart (neutral professional Spanish). SDK and self-hosting pages fall back to English for now. Route: delegated direct (same writer).
 - [x] T7 — Review follow-ups: redirect default-locale-prefixed markdown requests in `proxy.ts` before the rewrites (`/en/x.md`, `/en/x` + `Accept: text/markdown`); fix the Solid accessor example so it reads the flag inside a tracking scope. Route: direct inline (two small, understood edits).
-- [ ] T8 — Spanish translations for the remaining pages: `sdks/index`, `sdks/react`, `sdks/vue`, `sdks/solid`, `sdks/svelte`, `self-hosting` (neutral professional Spanish), plus Spanish sidebar folder titles if needed. Route: delegated direct (writer trigger: 6 non-trivial files).
+- [x] T8 — Spanish translations for the remaining pages: `sdks/index`, `sdks/react`, `sdks/vue`, `sdks/solid`, `sdks/svelte`, `self-hosting` (neutral professional Spanish), plus Spanish sidebar folder titles if needed. Route: delegated direct (writer trigger: 6 non-trivial files).
 
 ## Acceptance criteria
 
@@ -176,6 +176,60 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
   (intrinsic 76×96). `lib/layout.shared.tsx` now pins `height: 30` with
   `width: 'auto'`. Browser: both logo instances render 24×30, warning gone
   after reload. `npm run lint`: pass.
+
+- T8 done: `content/docs/sdks/index.es.mdx`, `sdks/react.es.mdx`,
+  `sdks/vue.es.mdx`, `sdks/solid.es.mdx`, `sdks/svelte.es.mdx`, and
+  `self-hosting.es.mdx` (dot-parser convention, next to their English
+  source). Neutral professional Spanish (no voseo, no regional slang),
+  matching `index.es.mdx`/`quickstart.es.mdx` terminology ("flag" kept as
+  "flag", "Guía rápida" style); frontmatter `title`/`description`
+  translated; code, identifiers, package names, commands, env var names,
+  API names, file paths, JSX component names/props, and `<Tabs
+  items>`/`<Tab value>` values left unchanged. The Solid page translates
+  the already-fixed accessor example (`<Show when={value()}>` plus the note
+  that a plain `if (value())` runs once outside a tracking scope).
+  - Anchor strategy: searched every `.mdx` file (English and Spanish) for
+    `#`-links and found exactly two internal cross-page anchor targets:
+    `self-hosting.mdx`'s `## Creating your first flag` (linked from
+    `quickstart` as `#creating-your-first-flag`) and `sdks/index.mdx`'s
+    `## Live updates` (linked from `quickstart` as `#live-updates`). Both
+    headings in the new Spanish pages use Fumadocs' custom heading-id
+    syntax, `## Título [#id]`, to keep the English anchor
+    (`## Creando tu primera flag [#creating-your-first-flag]`, `##
+    Actualizaciones en vivo [#live-updates]`) — verified against the
+    installed `remark-heading.js` source (`node_modules/fumadocs-core/dist/mdx-plugins/remark-heading.js`,
+    regex `\s*\[#(?<slug>[^]+?)]\s*$` on the heading's trailing text node)
+    rather than published docs, since a local context7 query for the syntax
+    itself returned no result. `content/docs/sdks/react.mdx`'s `#app`/`#if`
+    grep hits are code-block template literals (Vue/Svelte DOM ids), not
+    doc links, and `self-hosting.mdx`'s `#environment-variables` points at
+    the external GitHub README, not an internal page — neither needed an
+    id. `index.es.mdx`/`quickstart.es.mdx` already linked
+    `/es/self-hosting#creating-your-first-flag` and `/es/sdks#live-updates`
+    correctly (added in T6, resolving via English fallback); no changes
+    needed now that the Spanish targets exist natively.
+  - `meta.es.json`: none added. `content/docs/meta.json` title "Flagward"
+    and `content/docs/sdks/meta.json` title "SDKs" are both brand/product
+    names with no Spanish equivalent, consistent with T6's decision that
+    page titles (not `meta.json`) drive the sidebar page labels.
+  - `npm run build`: pass. `npm run lint`: pass (same 2 pre-existing
+    non-blocking `!important` warnings in the scaffold's scroll-lock CSS;
+    Biome's `files.includes` doesn't cover `content/**`, consistent with
+    T3/T6).
+  - Verification (production server, `PORT=3130 npx next start`): 200 on
+    `/es/sdks`, `/es/sdks/react`, `/es/sdks/vue`, `/es/sdks/solid`,
+    `/es/sdks/svelte`, `/es/self-hosting`, `/es/sdks/react.md`, and English
+    `/sdks/react`, `/self-hosting` (confirmed still English via `<title>`
+    and body text — "Quick start"/"Creating your first flag" present, no
+    Spanish leaked in). Each Spanish page's `<title>` matched its
+    translated frontmatter (e.g. `Descripción general | Flagward Docs`,
+    `Autoalojamiento | Flagward Docs`); `<html lang="es">` vs `lang="en"`
+    confirmed. `id="creating-your-first-flag"` present in the rendered
+    `/es/self-hosting`; `id="live-updates"` present in the rendered
+    `/es/sdks`. `GET /api/search?query=instalar&locale=es` returned two
+    matches under `/es/sdks`.
+  - Commit: see git log (`docs: translate sdk and self-hosting pages to
+    spanish`).
 
 ## Review
 

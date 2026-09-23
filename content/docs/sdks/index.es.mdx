@@ -1,0 +1,119 @@
+---
+title: Descripción general
+description: Los SDKs de JavaScript — un núcleo compartido, un adaptador ligero por framework.
+---
+
+Los SDKs de JavaScript de Flagward son un núcleo compartido y un adaptador
+ligero por framework.
+
+| Paquete | npm | Qué es |
+| --- | --- | --- |
+| [`@flagward/core`](https://www.npmjs.com/package/@flagward/core) | `@flagward/core` | El cliente, el evaluador de reglas y el reporte por consola. Sin asunciones de framework más allá de las APIs del navegador que protege. |
+| [`@flagward/react`](/es/sdks/react) | `@flagward/react` | El adaptador de React: un provider, `useFlag` y `useFlags`. |
+| [`@flagward/vue`](/es/sdks/vue) | `@flagward/vue` | El adaptador de Vue: un plugin, `useFlag` y `useFlags`. |
+| [`@flagward/solid`](/es/sdks/solid) | `@flagward/solid` | El adaptador de Solid: un provider, `useFlag` y `useFlags`. |
+| [`@flagward/svelte`](/es/sdks/svelte) | `@flagward/svelte` | El adaptador de Svelte: `setFlagward`, `useFlag` y `useFlags`, construidos sobre `svelte/store`. |
+
+Cada adaptador reexporta `@flagward/core`, así que instalar el adaptador de
+tu framework es suficiente — nunca necesitas ambos.
+
+## Instalación
+
+<Tabs items={['React', 'Vue', 'Solid', 'Svelte', 'Core (vanilla JS)']}>
+  <Tab value="React">
+    ```bash
+    npm install @flagward/react
+    ```
+  </Tab>
+  <Tab value="Vue">
+    ```bash
+    npm install @flagward/vue
+    ```
+  </Tab>
+  <Tab value="Solid">
+    ```bash
+    npm install @flagward/solid
+    ```
+  </Tab>
+  <Tab value="Svelte">
+    ```bash
+    npm install @flagward/svelte
+    ```
+  </Tab>
+  <Tab value="Core (vanilla JS)">
+    ```bash
+    npm install @flagward/core
+    ```
+  </Tab>
+</Tabs>
+
+## Por qué un núcleo compartido
+
+El cliente, el evaluador de reglas, el logger y los tipos no tienen ningún
+import de framework — un adaptador de framework es un provider y dos o tres
+bindings encima de ellos. El evaluador existe una sola vez, y cada adaptador
+depende de él, así que el mismo usuario, la misma flag y el mismo servidor
+se responden de la misma forma sin importar qué framework preguntó.
+
+## Cómo funciona la evaluación
+
+Un SDK descarga el conjunto completo de flags y sus reglas de segmentación
+para el entorno al que pertenece tu clave de API, y luego evalúa cada flag
+**localmente, en tu propio proceso**. Las reglas se evalúan contra un
+contexto que tú proporcionas — atributos del usuario como plan, país o id —
+bajo `AND` u `OR`, probadas en orden de prioridad; gana la primera
+coincidencia. Operadores admitidos: `EQUALS`, `NOT_EQUALS`, `GREATER_THAN`,
+`LESS_THAN`, `IN_LIST`, `CONTAINS`.
+
+`getFlag`/`useFlag` nunca lanzan un error. Una flag que no está en el entorno
+se lee como `undefined`, así que tu propio fallback decide qué ocurre, y el
+motivo se reporta en la consola una sola vez.
+
+## Actualizaciones en vivo [#live-updates]
+
+Cada adaptador abre un stream de Server-Sent Events y mantiene el snapshot
+local sincronizado con el servidor:
+
+- Una flag cambiada en el servidor llega a cada componente en menos de un
+  segundo.
+- Volver a estar en línea vuelve a leer las flags — una conexión
+  interrumpida significa eventos perdidos, así que reconectar por sí solo
+  serviría un valor obsoleto indefinidamente.
+- Volver a una pestaña que estaba en segundo plano hace lo mismo, ya que una
+  máquina que despierta de la suspensión pierde su conexión sin que el
+  navegador llegue a reportar la red como caída.
+- Donde no hay `EventSource` — renderizado en servidor, React Native, Node
+  plano — las actualizaciones en vivo se reportan como apagadas y el SDK
+  sigue sirviendo las flags que ya leyó.
+
+Un fallo nunca se propaga a tu aplicación: las flags mantienen sus últimos
+valores conocidos, y tu propio fallback decide qué ve el usuario.
+
+## Reporte de errores
+
+Cada fallo del que un SDK se recupera se reporta una vez por carga de
+página, con el prefijo `[Flagward]`. `logLevel` lo acota:
+
+| Valor | Reporta |
+| --- | --- |
+| `"warn"` (por defecto) | todo: flags desconocidas, streams caídos, fallos de red |
+| `"error"` | solo lo que no puede funcionar en absoluto: una clave de API ausente o rechazada, un provider ausente |
+| `"silent"` | nada |
+
+## Autoalojamiento
+
+`host` es opcional en cada SDK y por defecto apunta al servicio alojado en
+`https://app.flagward.com`. Una instalación autoalojada pasa el suyo propio
+— consulta [Autoalojamiento](/es/self-hosting).
+
+## Registro
+
+Cada adaptador se identifica a sí mismo al registrarse con el servidor (el
+núcleo como `JAVASCRIPT`, y los adaptadores como `REACT`, `VUE`, `SOLID`,
+`SVELTE`), de modo que el panel muestra lo que la aplicación realmente
+instaló.
+
+## Formato de módulo
+
+Cada paquete se distribuye solo como ESM, con declaraciones de tipos. No hay
+build de CommonJS.
