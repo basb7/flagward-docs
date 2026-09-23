@@ -26,7 +26,7 @@ Out of scope: CI image publishing, reverse proxy / TLS, deployment.
 
 ## Tasks
 
-- [~] T1 — Dockerfile, `.dockerignore`, `output: 'standalone'`, compose with `DOCS_PORT`, `.env.example`, README section. Route: delegated direct (writer trigger: 2+ non-trivial files). Partial: everything done and verified except `.env.example`, blocked by a global permission rule (see Progress).
+- [x] T1 — Dockerfile, `.dockerignore`, `output: 'standalone'`, compose with `DOCS_PORT`, `.env.example`, README section. Route: delegated direct (writer trigger: 2+ non-trivial files).
 
 ## Acceptance criteria
 
@@ -95,6 +95,8 @@ Out of scope: CI image publishing, reverse proxy / TLS, deployment.
   - `.env.example` is not required for `docker compose build`/`up` to work — `compose.yml` uses the `${DOCS_PORT:-3001}` shell-default syntax directly, no `env_file:` directive — so all Docker verification below ran without it, using shell-exported `DOCS_PORT` for the port-override test instead of a `.env` file.
 - Verification run (see Verification section below): all steps passed except the `.env.example`-dependent parts of steps 2 and 5, which were adapted to not require the file.
 
+- `.env.example` created by the user (the agent's writes to dotenv-shaped paths are denied by `~/.claude/settings.json`). Verified: content as documented above; tracked (matches `!.env.example`); `docker compose --env-file .env.example config` publishes `3001`; an env file with `DOCS_PORT=3005` serves `/quickstart` on `:3005` (200) while `:3001` stops answering; containers brought down afterwards.
+
 ## Next step
 
-Create `.env.example` (content above) — needs either a one-off permission grant for that exact path or the user creating it directly — then flip T1's checkbox to done. No other work remains.
+None — T1 is complete.
