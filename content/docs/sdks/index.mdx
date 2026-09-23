@@ -9,10 +9,10 @@ framework.
 | Package | npm | What it is |
 | --- | --- | --- |
 | [`@flagward/core`](https://www.npmjs.com/package/@flagward/core) | `@flagward/core` | The client, the rule evaluator, and console reporting. No framework assumptions beyond the browser APIs it guards. |
-| [`@flagward/react`](/docs/sdks/react) | `@flagward/react` | The React adapter: a provider, `useFlag` and `useFlags`. |
-| [`@flagward/vue`](/docs/sdks/vue) | `@flagward/vue` | The Vue adapter: a plugin, `useFlag` and `useFlags`. |
-| [`@flagward/solid`](/docs/sdks/solid) | `@flagward/solid` | The Solid adapter: a provider, `useFlag` and `useFlags`. |
-| [`@flagward/svelte`](/docs/sdks/svelte) | `@flagward/svelte` | The Svelte adapter: `setFlagward`, `useFlag` and `useFlags`, built on `svelte/store`. |
+| [`@flagward/react`](/sdks/react) | `@flagward/react` | The React adapter: a provider, `useFlag` and `useFlags`. |
+| [`@flagward/vue`](/sdks/vue) | `@flagward/vue` | The Vue adapter: a plugin, `useFlag` and `useFlags`. |
+| [`@flagward/solid`](/sdks/solid) | `@flagward/solid` | The Solid adapter: a provider, `useFlag` and `useFlags`. |
+| [`@flagward/svelte`](/sdks/svelte) | `@flagward/svelte` | The Svelte adapter: `setFlagward`, `useFlag` and `useFlags`, built on `svelte/store`. |
 
 Every adapter re-exports `@flagward/core`, so installing the adapter for your
 framework is enough — you never need both.
@@ -101,7 +101,7 @@ with `[Flagward]`. `logLevel` narrows it:
 
 `host` is optional on every SDK and defaults to the hosted service at
 `https://app.flagward.com`. A self-hosted install passes its own — see
-[Self-hosting](/docs/self-hosting).
+[Self-hosting](/self-hosting).
 
 ## Registration
 

@@ -14,7 +14,6 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  // TODO: replace with the real deployment domain once this site is deployed.
   metadataBase: new URL('https://docs.flagward.com'),
   title: {
     default: 'Flagward Docs',

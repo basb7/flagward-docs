@@ -27,6 +27,7 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
 - [x] T1 — Scaffold Fumadocs app (Next.js + fumadocs-mdx, npm) with Biome; `npm run build` passes.
 - [x] T2 — Apply Flagward branding (dark palette, logo, favicon, nav title/links).
 - [x] T3 — Initial content skeleton sourced from real READMEs, with framework tabs for SDK examples.
+- [x] T4 — Serve docs at the site root (deployment target `docs.flagward.com`): drop the `/docs` prefix from pages, OG images, markdown routes, proxy rewrites, and content links. Route: direct inline (mechanical, already understood).
 
 ## Acceptance criteria
 
@@ -126,6 +127,20 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
   - Commit: `bd70f1d` — `docs: add initial content skeleton` (hash recorded
     before the final self-referential amend; see `git log` for the exact tip
     — this is a known, harmless discrepancy explained in the final report).
+
+- T4 done: docs served from the site root for `docs.flagward.com`. Moved
+  `app/docs/*` into route group `app/(docs)/`, `og/docs` → `og`,
+  `llms.mdx/docs` → `llms.mdx`; `docsRoute = '/'`; removed the `/` → `/docs`
+  redirect; rewrote `/docs/...` content links. `proxy.ts` now derives a
+  prefix-free pattern and adds a `matcher` excluding `api/`, `og/`, `llms*`,
+  `_next/`, and static assets, so the `.md` suffix rewrite cannot loop on
+  `/llms.mdx/.../content.md`. Dropped the `metadataBase` TODO (domain confirmed).
+  - `npm run build`: pass. `npm run lint`: pass (same 2 scaffold warnings).
+  - Smoke (production server): 200 on `/`, `/quickstart`, `/sdks/react`,
+    `/self-hosting`, `/quickstart.md`, `/llms.mdx/quickstart/content.md`,
+    `/og/quickstart/image.png`, `/llms.txt`, `/api/search`, `/logo.png`;
+    `Accept: text/markdown` on `/quickstart` returns markdown; `/docs` 404 (expected,
+    never deployed).
 
 ## Review
 

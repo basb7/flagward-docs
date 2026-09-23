@@ -9,7 +9,7 @@ check never blocks on the network.
 
 An environment's API key is created in the dashboard under
 **Environments → New Environment** — see
-[Creating your first flag](/docs/self-hosting#creating-your-first-flag) for
+[Creating your first flag](/self-hosting#creating-your-first-flag) for
 the full walkthrough.
 
 <Tabs items={['React', 'Vue', 'Solid', 'Svelte', 'Core (vanilla JS)']}>
@@ -37,7 +37,7 @@ the full walkthrough.
     }
     ```
 
-    See the [React SDK](/docs/sdks/react) page for hooks, context, and Next.js notes.
+    See the [React SDK](/sdks/react) page for hooks, context, and Next.js notes.
   </Tab>
   <Tab value="Vue">
     ```bash
@@ -69,7 +69,7 @@ the full walkthrough.
     </template>
     ```
 
-    See the [Vue SDK](/docs/sdks/vue) page for composables and reactive context.
+    See the [Vue SDK](/sdks/vue) page for composables and reactive context.
   </Tab>
   <Tab value="Solid">
     ```bash
@@ -103,7 +103,7 @@ the full walkthrough.
     }
     ```
 
-    See the [Solid SDK](/docs/sdks/solid) page for signals and reactive context.
+    See the [Solid SDK](/sdks/solid) page for signals and reactive context.
   </Tab>
   <Tab value="Svelte">
     ```bash
@@ -136,7 +136,7 @@ the full walkthrough.
     {/if}
     ```
 
-    See the [Svelte SDK](/docs/sdks/svelte) page for SvelteKit and SSR notes.
+    See the [Svelte SDK](/sdks/svelte) page for SvelteKit and SSR notes.
   </Tab>
   <Tab value="Core (vanilla JS)">
     ```bash
@@ -160,7 +160,7 @@ the full walkthrough.
     Every framework adapter re-exports this client, so reach for
     `@flagward/core` directly outside a framework — a plain script, a server,
     or a framework with no dedicated adapter yet. See the
-    [SDKs overview](/docs/sdks) for details.
+    [SDKs overview](/sdks) for details.
   </Tab>
 </Tabs>
 
@@ -168,7 +168,7 @@ the full walkthrough.
 
 Call `client.connect()` (or use the adapter's provider, which does this for
 you) to open a Server-Sent Events stream and keep the local snapshot in
-step with the server — see [SDKs](/docs/sdks#live-updates).
+step with the server — see [SDKs](/sdks#live-updates).
 
 ## Self-hosting
 
@@ -178,4 +178,4 @@ Point `host` at your own instance instead of the hosted default:
 new FlagwardClient({ apiKey, host: 'https://flags.example.com' });
 ```
 
-See [Self-hosting](/docs/self-hosting) to run Flagward with Docker Compose.
+See [Self-hosting](/self-hosting) to run Flagward with Docker Compose.
