@@ -6,11 +6,16 @@ export const docsRoute = '/';
 export const docsImageRoute = '/og';
 export const docsContentRoute = '/llms.mdx';
 
-// TODO: the docs repo URL is pending (this content currently lives in
-// flagward-docs, which has no remote yet); update once it does.
-export const gitConfig = {
+// The product repository, linked from the nav.
+export const productRepo = {
   user: 'basb7',
   repo: 'flagward',
+};
+
+// This site's own repository, used for "Edit on GitHub" links.
+export const docsRepo = {
+  user: 'basb7',
+  repo: 'flagward-docs',
   branch: 'main',
 };
 

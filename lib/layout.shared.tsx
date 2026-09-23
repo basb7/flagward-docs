@@ -2,7 +2,7 @@ import { uiTranslations } from 'fumadocs-ui/i18n';
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 import Image from 'next/image';
 import { i18n } from './i18n';
-import { appName, gitConfig } from './shared';
+import { appName, productRepo } from './shared';
 
 // Spanish UI strings for fumadocs-ui's built-in chrome (search, pagination,
 // page actions, table of contents, ...). Neutral professional Spanish, no
@@ -93,7 +93,7 @@ export function baseOptions(_locale: string): BaseLayoutProps {
         </>
       ),
     },
-    githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
+    githubUrl: `https://github.com/${productRepo.user}/${productRepo.repo}`,
     // Flagward docs ship a single dark theme; there is nothing to toggle.
     themeSwitch: {
       enabled: false,

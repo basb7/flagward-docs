@@ -231,6 +231,14 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
   - Commit: see git log (`docs: translate sdk and self-hosting pages to
     spanish`).
 
+- Fix ("Edit on GitHub" pointed at the product repo): split `gitConfig` in
+  `lib/shared.ts` into `productRepo` (`basb7/flagward`, nav GitHub link) and
+  `docsRepo` (`basb7/flagward-docs`, branch `main`, edit links). Rendered
+  edit links verified for `/quickstart`, `/es/quickstart`, `/sdks/react`,
+  `/es/sdks/react` (each points to its own `.mdx` / `.es.mdx`). Remote
+  `origin` set to `https://github.com/basb7/flagward-docs.git` (not pushed).
+  - `npm run build`: pass. `npm run lint`: pass.
+
 ## Review
 
 - Range `e45deb3..54717f6` (T2+T3): assessed medium (`slice_budget_reached`), consent granted, lineage `review-3f23edc4c0fbd8a1` approved and acknowledged. T1 (root commit) is outside the reviewed range.
