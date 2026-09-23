@@ -1,30 +1,31 @@
 import type { MetadataRoute } from 'next';
-import { i18n } from '@/lib/i18n';
 import { siteUrl } from '@/lib/shared';
-import { getTranslatedLanguages, source } from '@/lib/source';
+import { getPageAlternates, source } from '@/lib/source';
 
-// One entry per page per locale (including English-fallback pages, which
-// are still real, crawlable URLs), each with hreflang alternates limited to
-// its actual translations plus `x-default` -- see
-// `getTranslatedLanguages` in `lib/source.ts`. No `lastModified`: the
-// content source (MDX files) carries no reliable last-changed date, and a
-// build-time `new Date()` would just churn every entry on every deploy.
+// One entry per page per locale it is really translated into, each with
+// the same hreflang cluster as the page metadata (`getPageAlternates` in
+// `lib/source.ts`). Fallback URLs (a locale serving default-language
+// content) are left out: they canonicalize to the default-language page. No
+// `lastModified`: the content source (MDX files) carries no reliable
+// last-changed date, and a build-time `new Date()` would just churn every
+// entry on every deploy.
 export default function sitemap(): MetadataRoute.Sitemap {
-  return source.getLanguages().flatMap(({ pages }) =>
-    pages.map((page) => {
-      const languages: Record<string, string> = Object.fromEntries(
-        getTranslatedLanguages(page.slugs).map((lang) => [
+  return source.getLanguages().flatMap(({ language, pages }) =>
+    pages.flatMap((page) => {
+      const { translated, languages, xDefault } = getPageAlternates(page.slugs);
+      if (!(translated as string[]).includes(language)) return [];
+
+      const absolute: Record<string, string> = Object.fromEntries(
+        Object.entries(languages).map(([lang, url]) => [
           lang,
-          `${siteUrl}${source.getPage(page.slugs, lang)?.url}`,
+          `${siteUrl}${url}`,
         ]),
       );
-      languages['x-default'] =
-        `${siteUrl}${source.getPage(page.slugs, i18n.defaultLanguage)?.url}`;
+      if (xDefault) absolute['x-default'] = `${siteUrl}${xDefault}`;
 
-      return {
-        url: `${siteUrl}${page.url}`,
-        alternates: { languages },
-      };
+      return [
+        { url: `${siteUrl}${page.url}`, alternates: { languages: absolute } },
+      ];
     }),
   );
 }

@@ -56,3 +56,21 @@ export function getTranslatedLanguages(slugs: string[]) {
     );
   });
 }
+
+/**
+ * URLs of this page in every language it is really translated into, plus
+ * the `x-default` URL (the default language when it exists, otherwise the
+ * first real translation). Used by page metadata and the sitemap so both
+ * build the same hreflang cluster.
+ */
+export function getPageAlternates(slugs: string[]) {
+  const translated = getTranslatedLanguages(slugs);
+  const languages: Record<string, string> = {};
+  for (const lang of translated) {
+    const page = source.getPage(slugs, lang);
+    if (page) languages[lang] = page.url;
+  }
+  const xDefault = languages[i18n.defaultLanguage] ?? languages[translated[0]];
+
+  return { translated, languages, xDefault };
+}

@@ -10,14 +10,14 @@ import { createRelativeLink } from 'fumadocs-ui/mdx';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/components/mdx';
-import { i18n, ogLocales } from '@/lib/i18n';
+import { i18n, type Locale, ogLocales } from '@/lib/i18n';
 import {
   docsRepo,
   docsTitle,
   getPageImageUrl,
   getPageMarkdownUrl,
 } from '@/lib/shared';
-import { getTranslatedLanguages, source } from '@/lib/source';
+import { getPageAlternates, source } from '@/lib/source';
 
 export default async function Page(props: PageProps<'/[lang]/[[...slug]]'>) {
   const params = await props.params;
@@ -63,37 +63,29 @@ export async function generateMetadata(
   const page = source.getPage(params.slug, params.lang);
   if (!page) notFound();
 
-  const locale = (page.locale ??
-    i18n.defaultLanguage) as keyof typeof ogLocales;
-  const translatedLanguages = getTranslatedLanguages(page.slugs);
+  const { translated, languages, xDefault } = getPageAlternates(page.slugs);
+  const requested = (page.locale ?? i18n.defaultLanguage) as Locale;
 
-  // Only list locales where this page really has a translation (never a
-  // fallback page pointing at the English source) -- see
-  // `getTranslatedLanguages` in `lib/source.ts`.
-  const languages: Record<string, string> = Object.fromEntries(
-    translatedLanguages.map((lang) => [
-      lang,
-      source.getPage(page.slugs, lang)!.url,
-    ]),
-  );
-  languages['x-default'] = source.getPage(
-    page.slugs,
-    i18n.defaultLanguage,
-  )!.url;
+  // A fallback page (e.g. `/es/<page>` with no Spanish translation) serves
+  // the default-language content, so it canonicalizes to that URL and is
+  // described with the default locale instead of claiming a translation.
+  const isFallback = !translated.includes(requested);
+  const locale = isFallback ? (i18n.defaultLanguage as Locale) : requested;
+  const canonical = isFallback ? languages[i18n.defaultLanguage] : page.url;
 
-  const alternateLocale = translatedLanguages
+  const alternateLocale = translated
     .filter((lang) => lang !== locale)
-    .map((lang) => ogLocales[lang]);
+    .map((lang) => ogLocales[lang as Locale]);
 
   return {
     title: page.data.title,
     description: page.data.description,
     alternates: {
-      canonical: page.url,
-      languages,
+      canonical,
+      languages: xDefault ? { ...languages, 'x-default': xDefault } : languages,
     },
     openGraph: {
-      url: page.url,
+      url: canonical,
       siteName: docsTitle,
       type: page.slugs.length === 0 ? 'website' : 'article',
       locale: ogLocales[locale],

@@ -73,6 +73,8 @@ Out of scope: structured data (JSON-LD), analytics, Search Console setup.
   - `getTranslatedLanguages` relies on a fumadocs internal (`absolutePath` of fallback storage) with no automated test.
   - `robots.txt`/`sitemap.xml` matcher exclusions are unanchored prefixes (same as the existing `llms.txt` entry).
 
+- Follow-ups fixed: `getPageAlternates(slugs)` in `lib/source.ts` builds the hreflang cluster once (real translations only, `x-default` = default language or first real translation, no non-null assertions); page metadata canonicalizes fallback pages to the default-language URL with the default OG locale; the sitemap lists only real translations. Verified with temporary pages (not committed): `/es/tmp-en-only` → canonical `/tmp-en-only`, `og:locale=en_US`, not in sitemap; `/es/tmp-es-only` → 200, `x-default` → itself; sitemap 18 entries with temps, no `undefined`, back to 16 after removal. `tsc --noEmit`, `npm run lint`, `npm run build`: pass.
+
 ## Next step
 
 Feature complete; ready for the user to review/push `feat/seo`.
