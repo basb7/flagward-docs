@@ -160,6 +160,16 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
   - Still open: `proxy.ts` matcher exclusions are unanchored; no unit test for
     `lib/i18n.ts` helpers (no test runner); docs repo URL TODO in `lib/shared.ts`.
 
+- Fix (dev console error "Encountered a script tag while rendering React
+  component"): the inline anti-flash `<script>` came from next-themes 0.4.6
+  inside Fumadocs' `RootProvider`. The theme is already fixed (static `dark`
+  class, toggle disabled), so `app/[lang]/layout.tsx` now passes
+  `theme={{ enabled: false }}`.
+  - `npm run build`: pass. `npm run lint`: pass.
+  - Browser (user's `next dev` on :3000): no console error on `/quickstart` or
+    `/es/quickstart`; `<html>` keeps `dark`, black background, correct `lang`.
+    Remaining dev warning: `/logo.png` `next/image` width/height aspect ratio.
+
 ## Review
 
 - Range `e45deb3..54717f6` (T2+T3): assessed medium (`slice_budget_reached`), consent granted, lineage `review-3f23edc4c0fbd8a1` approved and acknowledged. T1 (root commit) is outside the reviewed range.

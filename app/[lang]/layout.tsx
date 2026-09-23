@@ -39,19 +39,16 @@ export default async function Layout({
   return (
     <html
       lang={lang}
-      // Flagward ships one dark theme; `dark` is applied directly rather
-      // than left to next-themes, and the nav's theme toggle is disabled
-      // (see lib/layout.shared.tsx).
+      // Flagward ships one dark theme; `dark` is applied directly and
+      // next-themes is disabled below, so its inline anti-flash <script>
+      // (which React 19 warns about) is never rendered. The nav's theme
+      // toggle is disabled too (see lib/layout.shared.tsx).
       className={`dark ${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
       <body className="flex flex-col min-h-screen">
         <RootProvider
-          theme={{
-            forcedTheme: 'dark',
-            defaultTheme: 'dark',
-            enableSystem: false,
-          }}
+          theme={{ enabled: false }}
           i18n={i18nProvider(translations, lang)}
         >
           {children}
