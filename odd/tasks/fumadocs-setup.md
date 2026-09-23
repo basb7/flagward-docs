@@ -25,7 +25,7 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
 ## Tasks
 
 - [x] T1 — Scaffold Fumadocs app (Next.js + fumadocs-mdx, npm) with Biome; `npm run build` passes.
-- [ ] T2 — Apply Flagward branding (dark palette, logo, favicon, nav title/links).
+- [x] T2 — Apply Flagward branding (dark palette, logo, favicon, nav title/links).
 - [ ] T3 — Initial content skeleton sourced from real READMEs, with framework tabs for SDK examples.
 
 ## Acceptance criteria
@@ -68,6 +68,25 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
     `!important` in the scaffold's scroll-lock CSS and nothing else).
   - Commit: `20db791` — `feat: scaffold fumadocs documentation app`.
 
+- T2 done: mapped the `flagward-landing` dark palette onto Fumadocs UI's
+  `--color-fd-*` variables in `app/global.css` (single theme, set on both
+  `:root` and `.dark`), added Geist Sans/Mono via `next/font/google` (matching
+  `flagward-landing/app/[lang]/layout.tsx`), forced dark mode
+  (`RootProvider theme={{ forcedTheme: 'dark', defaultTheme: 'dark',
+  enableSystem: false }}` plus a static `dark` class on `<html>`) and disabled
+  the nav's theme toggle (`themeSwitch: { enabled: false }` in
+  `lib/layout.shared.tsx`). Copied `logo.png`, `icon.png`, `favicon.ico`,
+  `apple-icon.png` from `flagward-landing`. Nav title is "Flagward" with the
+  logo (`lib/layout.shared.tsx`); GitHub link points at
+  `https://github.com/basb7/flagward` (`lib/shared.ts`). Root `/` now
+  `redirect()`s to `/docs`; removed the now-unused `(home)` route group.
+  - `npm run build`: pass.
+  - `npm run lint`: pass (exit 0; same 2 non-blocking warnings as T1).
+  - Visual smoke check (production server, `/docs`): dark theme, logo, nav
+    title "Flagward", GitHub link, no theme toggle — confirmed via browser
+    screenshot.
+  - Commit: `0f88e4c` — `feat: apply flagward branding to docs`.
+
 ## Next step
 
-T2.
+T3.

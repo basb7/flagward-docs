@@ -1,9 +1,42 @@
 @import 'tailwindcss';
-@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/lib/default-colors.css';
 @import 'fumadocs-ui/css/preset.css';
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Flagward's single dark theme, matching flagward-landing so the docs site
+   and the product read as one surface. Defined on :root (not just .dark)
+   because the theme toggle is disabled and dark is the only mode. */
+:root,
+.dark {
+  --color-fd-background: #000000;
+  --color-fd-foreground: #ededed;
+  --color-fd-card: #0a0a0a;
+  --color-fd-card-foreground: #ededed;
+  --color-fd-popover: #0a0a0a;
+  --color-fd-popover-foreground: #ededed;
+  --color-fd-muted: #1a1a1a;
+  --color-fd-muted-foreground: #888888;
+  --color-fd-border: #333333;
+  --color-fd-primary: #ededed;
+  --color-fd-primary-foreground: #000000;
+  --color-fd-secondary: #1a1a1a;
+  --color-fd-secondary-foreground: #ededed;
+  --color-fd-accent: #1a1a1a;
+  --color-fd-accent-foreground: #ededed;
+  --color-fd-ring: #0070f3;
+  --color-fd-info: #0070f3;
+  --color-fd-warning: #f5a623;
+  --color-fd-error: #ff4444;
+  --color-fd-success: #45d483;
+}
 
 html {
   scrollbar-gutter: stable;
+  font-family: var(--font-sans);
 }
 
 html > body[data-scroll-locked] {
