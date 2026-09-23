@@ -1,7 +1,7 @@
 import { i18nProvider } from 'fumadocs-ui/i18n';
-import { RootProvider } from 'fumadocs-ui/provider/next';
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { LocaleProvider } from '@/components/locale-provider';
 import { translations } from '@/lib/layout.shared';
 import '../global.css';
 
@@ -47,12 +47,12 @@ export default async function Layout({
       suppressHydrationWarning
     >
       <body className="flex flex-col min-h-screen">
-        <RootProvider
+        <LocaleProvider
           theme={{ enabled: false }}
           i18n={i18nProvider(translations, lang)}
         >
           {children}
-        </RootProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

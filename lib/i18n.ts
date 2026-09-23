@@ -1,5 +1,11 @@
 import { defineI18n } from 'fumadocs-core/i18n';
 
+// Shared between proxy.ts (redirect) and the client locale provider
+// (writing the cookie) so the name only lives in one place. Matches the
+// landing site's cookie name for a consistent locale cookie across
+// properties.
+export const NEXT_LOCALE_COOKIE = 'NEXT_LOCALE';
+
 export const i18n = defineI18n({
   languages: ['en', 'es'],
   defaultLanguage: 'en',
