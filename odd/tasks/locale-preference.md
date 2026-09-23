@@ -68,6 +68,8 @@ Out of scope: `Accept-Language` auto-detection (deliberately rejected: it would 
 - Non-blocking follow-ups: no automated tests for the proxy cookie redirect or the copied switcher path logic (no test runner); possible Next.js client router cache serving a prefetched cookie-es 307 after switching to English (not reproduced in the browser check); cookie-dependent responses carry no `Vary: Cookie` / cache-control, which matters if a shared cache/CDN is added.
 - Checked the non-doc-route concern: with `NEXT_LOCALE=es`, `/api/search`, `/og/...`, `/llms.txt`, `/llms-full.txt`, `/llms.mdx/...`, `/logo.png`, `/favicon.ico` all return 200 (excluded by the matcher, no redirect).
 
+- Follow-up fixed (router cache): `components/locale-provider.tsx` now uses `window.location.assign(path)` after writing the cookie instead of `router.push`, so the request always goes through `proxy.ts` with the new cookie. Browser (dev :3000): cookie `es` + `/quickstart` → `/es/quickstart`; chose English → `/quickstart`, `lang="en"`, cookie `en`, navigation type `navigate` (full load); `/sdks/react` stays English; chose Español → `/es/sdks/react`, cookie `es`; reset to English. `npm run build`, `npm run lint`: pass.
+
 ## Next step
 
 None — T1 (the only task) is done. Delivery (push/PR) is the user's decision.

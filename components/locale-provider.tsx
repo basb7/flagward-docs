@@ -4,7 +4,7 @@ import {
   RootProvider,
   type RootProviderProps,
 } from 'fumadocs-ui/provider/next';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { NEXT_LOCALE_COOKIE } from '@/lib/i18n';
 
 type LocaleProviderProps = RootProviderProps & {
@@ -20,7 +20,6 @@ type LocaleProviderProps = RootProviderProps & {
  * serializable `i18n` data and adds the handler here instead.
  */
 export function LocaleProvider({ i18n, ...props }: LocaleProviderProps) {
-  const router = useRouter();
   const pathname = usePathname();
 
   const onLocaleChange = (value: string) => {
@@ -46,7 +45,11 @@ export function LocaleProvider({ i18n, ...props }: LocaleProviderProps) {
     if (hideLocale !== 'default-locale' || value !== defaultLanguage) {
       path = `/${value}${path === '/' ? '' : path}`;
     }
-    router.push(path);
+    // Hard navigation instead of `router.push`: the client router cache may
+    // hold a response prefetched under the previous cookie (e.g. the proxy's
+    // 307 to `/es`), which would undo an English choice. A full request goes
+    // through `proxy.ts` with the new cookie.
+    window.location.assign(path);
   };
 
   return <RootProvider {...props} i18n={{ ...i18n, onLocaleChange }} />;
