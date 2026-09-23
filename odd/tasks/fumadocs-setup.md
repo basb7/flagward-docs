@@ -255,6 +255,9 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
     Spanish Markdown (`# Guía rápida (/es/quickstart)`).
   - Commit: see git log (`docs: add spanish introduction and quickstart`).
 
+- Range `54717f6..6d7291f` (T4–T6): assessed medium (`slice_budget_reached`, 980 lines), consent granted, lineage `review-04ea7ebec8ae2adf` approved and acknowledged.
+- Non-blocking follow-ups from that review: markdown rewrites in `proxy.ts` run before the i18n middleware, so `/en/<page>.md` and `/en/<page>` with `Accept: text/markdown` return 404 instead of redirecting; `splitLocaleSlug`/`withLocaleSegment` in `lib/i18n.ts` have no unit test; `proxy.ts` matcher exclusions are unanchored prefixes (a slug starting with `og`/`api` would skip the middleware).
+
 ## Next step
 
 None — T1–T6 are complete. Acceptance criteria (`npm run build`, `npm run
