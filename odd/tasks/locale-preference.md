@@ -62,6 +62,12 @@ Out of scope: `Accept-Language` auto-detection (deliberately rejected: it would 
   - Browser (dev server, :3000, Claude Browser tools): `/quickstart` → opened language popover, chose Español → URL `/es/quickstart`, `document.cookie` contains `NEXT_LOCALE=es`; navigated to `/sdks/react` → landed on `/es/sdks/react`; chose English → URL `/sdks/react`, cookie `NEXT_LOCALE=en`; navigated to `/quickstart` → stayed English. Left in English state (no reset needed).
 - Commit: `feat: remember the reader's language choice` on `feat/locale-preference`.
 
+## Review
+
+- Range `3c41202..a67566c`: assessed medium (under budget, 164 lines); the stop hook required review, consent granted, lineage `review-fa0a16725f029a2e` approved and acknowledged.
+- Non-blocking follow-ups: no automated tests for the proxy cookie redirect or the copied switcher path logic (no test runner); possible Next.js client router cache serving a prefetched cookie-es 307 after switching to English (not reproduced in the browser check); cookie-dependent responses carry no `Vary: Cookie` / cache-control, which matters if a shared cache/CDN is added.
+- Checked the non-doc-route concern: with `NEXT_LOCALE=es`, `/api/search`, `/og/...`, `/llms.txt`, `/llms-full.txt`, `/llms.mdx/...`, `/logo.png`, `/favicon.ico` all return 200 (excluded by the matcher, no redirect).
+
 ## Next step
 
 None — T1 (the only task) is done. Delivery (push/PR) is the user's decision.
