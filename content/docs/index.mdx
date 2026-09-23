@@ -1,13 +1,38 @@
 ---
-title: Hello World
-description: Your first document
+title: Introduction
+description: What Flagward is and how it evaluates flags.
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+Flagward is an open-source feature flag system: a Django backend and Redis
+store, a Next.js dashboard, and SDKs for evaluating flags directly in your
+application.
 
-## What is Next?
+## Local evaluation
 
-<Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
-</Cards>
+An SDK downloads the flag rules for its environment once and evaluates them
+**in your process**, not over HTTP. A flag check never blocks on a network
+call — it costs about as much as reading a plain object.
+
+## Real-time updates
+
+Flag changes stream to every connected SDK over Server-Sent Events (SSE), so
+a flag flipped in the dashboard reaches production clients within a second,
+without a redeploy or a page reload. If a client's stream drops, it re-reads
+the flags once the connection is restored, so a change made during an outage
+is never silently missed.
+
+## Other things worth knowing up front
+
+- **Kill switch overrides** — force a flag on or off during an incident, with
+  an audit trail, without touching the flag's own configuration.
+- **Targeting rules** — boolean and multivariate flags, evaluated against a
+  user context, with percentage rollouts.
+- **Self-hostable** — one `docker compose up` away; see
+  [Self-hosting](/docs/self-hosting).
+
+## Where to go next
+
+- [Quickstart](/docs/quickstart) — install an SDK and read your first flag.
+- [SDKs](/docs/sdks) — the JavaScript SDKs: `@flagward/core` and one adapter
+  per framework.
+- [Self-hosting](/docs/self-hosting) — run Flagward with Docker Compose.

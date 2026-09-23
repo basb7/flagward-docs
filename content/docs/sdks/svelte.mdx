@@ -1,0 +1,139 @@
+---
+title: Svelte
+description: '@flagward/svelte — setFlagward, useFlag, and useFlags.'
+---
+
+## Installation
+
+```bash
+npm install @flagward/svelte
+```
+
+Works with Svelte 4 or 5. `@flagward/core` comes with it — you do not
+install it separately.
+
+## Quick start
+
+Call `setFlagward` once, in a root component's `<script>` — a SvelteKit
+`+layout.svelte` is the usual place:
+
+```svelte
+<!-- +layout.svelte -->
+<script lang="ts">
+  import { setFlagward } from '@flagward/svelte';
+
+  setFlagward({
+    apiKey: 'your-environment-api-key',
+    host: 'https://flags.example.com',
+  });
+</script>
+
+<slot />
+```
+
+Then ask for a flag wherever the decision is actually made:
+
+```svelte
+<!-- Checkout.svelte -->
+<script lang="ts">
+  import { useFlag } from '@flagward/svelte';
+
+  const flag = useFlag('new-checkout');
+</script>
+
+{#if $flag.isLoading}
+  <LegacyCheckout />
+{:else if $flag.value}
+  <NewCheckout />
+{:else}
+  <LegacyCheckout />
+{/if}
+```
+
+Nothing has to be wrapped in a provider component — a flag is asked for
+where the decision is made, not where somebody remembered to set it up.
+`<slot />` is Svelte 4's spelling; on Svelte 5 it is `{@render children()}`.
+
+## The result is one store of an object
+
+`useFlag` and `useFlags` each return a single `Readable` whose value is a
+plain object. Destructuring the store away would lose reactivity, so read
+through the `$` prefix:
+
+```ts
+const flag = useFlag('new-checkout');
+// $flag.value, $flag.isLoading, $flag.error
+```
+
+## The context can be a store
+
+Everywhere a context is taken — `setFlagward`, `useFlag`, `useFlags` — it
+accepts a store as readily as a plain object:
+
+```ts
+import { writable } from 'svelte/store';
+
+const user = writable({ plan: 'standard' });
+const flag = useFlag('beta', user);
+
+user.set({ plan: 'pro' }); // the flag re-evaluates, the DOM updates
+```
+
+## `createFlagward` — the manual escape hatch
+
+`setFlagward` needs a component's `<script>` block. Where there is no
+component — a plain module, a test, a SvelteKit `load` that runs before any
+layout mounts — `createFlagward` builds the same state without that
+requirement, and you own calling `destroy()` yourself:
+
+```ts
+import { createFlagward, flagStore } from '@flagward/svelte';
+
+const flagward = createFlagward({ apiKey: 'your-environment-api-key' });
+const flag = flagStore(flagward, 'beta');
+
+// later, once you are done with it
+flagward.destroy();
+```
+
+## SvelteKit
+
+It works with nothing to configure — `setFlagward` in `+layout.svelte`,
+`useFlag` wherever the decision is made. A component renders on the server
+for the first request and again once it hydrates, so `setFlagward` executes
+in both places; the HTML ships the loading state, and the real value appears
+once the browser builds its own client.
+
+To resolve on the server too (skipping that flash), read the flag with the
+core in a load function instead:
+
+```ts
+// +page.server.ts
+import { FlagwardClient } from '@flagward/svelte';
+import { env } from '$env/dynamic/private';
+
+export async function load() {
+  const client = new FlagwardClient({ apiKey: env.FLAGWARD_API_KEY, logLevel: 'silent' });
+  await client.init();
+  return { newCheckout: client.getFlag('new-checkout') };
+}
+```
+
+That key carries no `PUBLIC_` prefix, so it never reaches the browser. The
+trade is that a server-resolved flag does not follow the SSE stream — a
+change lands on the next request rather than within the second.
+
+## Options
+
+| Option | Type | Default |
+| --- | --- | --- |
+| `apiKey` | `string` | — required |
+| `host` | `string` | `https://app.flagward.com` |
+| `context` | `UserContext \| Readable<UserContext>` | `{}` |
+| `logLevel` | `"warn" \| "error" \| "silent"` | `"warn"` |
+
+## Outside Svelte
+
+```ts
+import { FlagwardClient, evaluateFlag } from '@flagward/svelte';
+```

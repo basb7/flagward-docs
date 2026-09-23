@@ -1,0 +1,153 @@
+---
+title: Self-hosting
+description: Run Flagward with Docker Compose.
+---
+
+<Callout type="warn">
+  Flagward ships with development defaults so it runs out of the box. They
+  are **not** safe for a deployment — review `SECURITY.md` in the
+  [flagward repository](https://github.com/basb7/flagward) before exposing
+  an instance.
+</Callout>
+
+## Docker (recommended)
+
+```bash
+git clone https://github.com/basb7/flagward.git
+cd flagward
+
+# Development mode: hot-reload, debug on, runserver (auto-restart on changes)
+docker compose -f compose.dev.yml up
+
+# Production mode: Gunicorn with 4 workers, debug off, optimized
+docker compose up
+```
+
+**Services:**
+
+| Service | URL |
+| --- | --- |
+| Frontend (dashboard) | http://localhost:3000 |
+| Backend API | http://localhost:8000 |
+| Django Admin | http://localhost:8000/admin/ |
+| PostgreSQL | localhost:5432 |
+| Redis | localhost:6379 |
+
+### Compose files
+
+| File | Mode | Description |
+| --- | --- | --- |
+| `compose.dev.yml` | Development | Hot-reload, debug, `runserver` |
+| `compose.yml` | Production | Gunicorn, optimized, secure |
+
+```bash
+docker compose -f compose.dev.yml up      # development, hot-reload
+docker compose -f compose.dev.yml up -d   # development, detached
+docker compose up                          # production
+docker compose up -d                       # production, detached
+docker compose down                        # stop all services
+docker compose down -v                     # stop and remove volumes
+docker compose logs -f backend             # view backend logs
+docker compose build --no-cache            # rebuild images
+```
+
+## Configuration
+
+Copy `.env.example` to `.env` and configure it:
+
+```bash
+cp .env.example .env
+```
+
+The file is read on startup, in development and production alike, and is
+resolved next to `manage.py` rather than from the working directory. Values
+already present in the environment win over the file — a container that sets
+`DB_HOST` through compose keeps it even if an `.env` reached the image.
+
+Some of the settings worth knowing about before you deploy:
+
+| Variable | Description | Default |
+| --- | --- | --- |
+| `SECRET_KEY` | Django secret key | `django-insecure-dev-key-change-in-production` |
+| `DEBUG` | Debug mode | `True` |
+| `DEFAULT_ORGANIZATION_PLAN` | The plan a new organization is created on: `COMMUNITY` (unlimited), `FREE`, `STARTER`, or `TEAM`. The only difference between a self-hosted install and a hosted one. | `COMMUNITY` |
+| `DB_NAME` | PostgreSQL database. **Setting this (or `USE_POSTGRES`) is what selects PostgreSQL**; with neither, the app falls back to SQLite at `db.sqlite3`. | unset (SQLite) |
+| `REDIS_URL` | Cache backend. Unset, Django uses an in-process cache — correct for one development server, wrong for more than one process. | unset |
+| `REDIS_STREAMS_URL` | Backs the flag-change stream to connected SDKs. Unset, flags still evaluate; what stops is live propagation. | unset |
+| `ALLOWED_HOSTS` | Allowed domains | `localhost,127.0.0.1` |
+| `CORS_ALLOWED_ORIGINS` | CORS origins | `http://localhost:3000` |
+| `CSRF_TRUSTED_ORIGINS` | CSRF origins | `http://localhost:3000` |
+| `FRONTEND_BASE_URL` | Where the frontend lives; used to build links in the password-reset email and invitation-create response. | `http://localhost:3000` |
+
+Email (`EMAIL_HOST` and friends) is entirely optional; a self-hosted instance
+keeps working with none of it set. With `EMAIL_HOST` unset and `DEBUG=True`,
+outgoing mail prints to the terminal instead of being sent, so the
+password-reset flow is testable without a mail server. See the
+[flagward README](https://github.com/basb7/flagward#environment-variables)
+for the full variable reference.
+
+## Production deployment
+
+1. Set up your server (AWS, GCP, DigitalOcean, etc.).
+2. Clone the repository and `cp .env.example .env`, then edit it with your
+   production values.
+3. `docker compose up -d`.
+4. Verify with `docker compose ps` and `docker compose logs backend`.
+5. Put Nginx or Traefik in front with a TLS certificate (Let's Encrypt).
+
+## Local development (without Docker)
+
+Prerequisites: Python 3.14+, Node.js 20+.
+
+```bash
+# Backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements/base.txt
+pip install -r requirements/dev.txt
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+
+# Frontend (in another terminal)
+cd frontend
+npm install
+npm run dev
+```
+
+## Creating your first flag
+
+1. **Register** at `http://localhost:3000/register` — username, email,
+   password. This is not your superuser: the superuser administers the
+   deployment through Django admin and holds no membership anywhere, so the
+   dashboard shows it nothing. Whoever registers becomes the `ADMIN` of the
+   organizations they create.
+2. **Create your organization** — the dashboard asks for one the moment you
+   arrive with none.
+3. **Create a project** — nav → New project. No key to invent: the server
+   derives it from the name.
+4. **Create an environment** — Environments → New Environment. The API key
+   is auto-generated and copyable from the table.
+5. **Create a feature flag** — Flags → New Flag, pick the environment, give
+   it a key and a name.
+6. **Turn it on** — flip the switch in the Status column.
+7. **Add rules and conditions** (optional) — row menu → Rules → New Rule,
+   then a condition such as `country Equals US`.
+8. **Watch it work** — Monitoring shows which SDKs are connected. It will
+   not show evaluations from a client evaluating locally, which is what the
+   JavaScript SDKs do — those never reach the server.
+
+### Killing a flag during an incident
+
+Do not reach for the flag's own switch — that edits its design and loses the
+state it was in. Instead, go to **Monitoring → Overrides → New override**,
+pick the flag, choose `Disabled (kill switch)`, and write the reason. The
+flag is forced off immediately, for everyone, ignoring its targeting rules.
+Hit **Lift** when the incident is over and the flag returns to exactly the
+configuration it had.
+
+<Callout type="info">
+  The full API reference (endpoints, request/response shapes, models) is not
+  yet part of this site — see the
+  [flagward README](https://github.com/basb7/flagward) in the meantime.
+</Callout>

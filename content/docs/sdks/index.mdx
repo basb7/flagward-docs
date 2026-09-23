@@ -1,0 +1,115 @@
+---
+title: Overview
+description: The JavaScript SDKs — one shared core, one thin adapter per framework.
+---
+
+Flagward's JavaScript SDKs are one shared core and one thin adapter per
+framework.
+
+| Package | npm | What it is |
+| --- | --- | --- |
+| [`@flagward/core`](https://www.npmjs.com/package/@flagward/core) | `@flagward/core` | The client, the rule evaluator, and console reporting. No framework assumptions beyond the browser APIs it guards. |
+| [`@flagward/react`](/docs/sdks/react) | `@flagward/react` | The React adapter: a provider, `useFlag` and `useFlags`. |
+| [`@flagward/vue`](/docs/sdks/vue) | `@flagward/vue` | The Vue adapter: a plugin, `useFlag` and `useFlags`. |
+| [`@flagward/solid`](/docs/sdks/solid) | `@flagward/solid` | The Solid adapter: a provider, `useFlag` and `useFlags`. |
+| [`@flagward/svelte`](/docs/sdks/svelte) | `@flagward/svelte` | The Svelte adapter: `setFlagward`, `useFlag` and `useFlags`, built on `svelte/store`. |
+
+Every adapter re-exports `@flagward/core`, so installing the adapter for your
+framework is enough — you never need both.
+
+## Installing
+
+<Tabs items={['React', 'Vue', 'Solid', 'Svelte', 'Core (vanilla JS)']}>
+  <Tab value="React">
+    ```bash
+    npm install @flagward/react
+    ```
+  </Tab>
+  <Tab value="Vue">
+    ```bash
+    npm install @flagward/vue
+    ```
+  </Tab>
+  <Tab value="Solid">
+    ```bash
+    npm install @flagward/solid
+    ```
+  </Tab>
+  <Tab value="Svelte">
+    ```bash
+    npm install @flagward/svelte
+    ```
+  </Tab>
+  <Tab value="Core (vanilla JS)">
+    ```bash
+    npm install @flagward/core
+    ```
+  </Tab>
+</Tabs>
+
+## Why a shared core
+
+The client, the rule evaluator, the logger, and the types have no framework
+imports at all — a framework adapter is a provider and two or three bindings
+on top of them. The evaluator exists once, and every adapter depends on it,
+so the same user, the same flag, and the same server are answered the same
+way regardless of which framework asked.
+
+## How evaluation works
+
+An SDK downloads the full set of flags and their targeting rules for the
+environment your API key belongs to, then evaluates each flag **locally, in
+your process**. Rules are evaluated against a context you supply — user
+attributes such as plan, country, or id — under `AND` or `OR`, tried in
+priority order; the first match wins. Supported operators: `EQUALS`,
+`NOT_EQUALS`, `GREATER_THAN`, `LESS_THAN`, `IN_LIST`, `CONTAINS`.
+
+`getFlag`/`useFlag` never throw. A flag that is not in the environment reads
+as `undefined`, so your own fallback decides what happens, and the reason is
+reported to the console once.
+
+## Live updates
+
+Every adapter opens a Server-Sent Events stream and keeps the local snapshot
+in step with the server:
+
+- A flag changed on the server reaches every component within a second.
+- Coming back online re-reads the flags — a dropped connection means missed
+  events, so reconnecting alone would serve a stale value indefinitely.
+- Returning to a backgrounded tab does the same, since a machine waking from
+  sleep drops its connection without the browser ever reporting the network
+  as gone.
+- Where there is no `EventSource` — server rendering, React Native, plain
+  Node — live updates are reported as off and the SDK keeps serving the
+  flags it already read.
+
+A failure never propagates into your application: flags keep their last
+known values, and your own fallback decides what the user sees.
+
+## Error reporting
+
+Every failure an SDK recovers from is reported once per page load, prefixed
+with `[Flagward]`. `logLevel` narrows it:
+
+| Value | Reports |
+| --- | --- |
+| `"warn"` (default) | everything: unknown flags, dropped streams, network failures |
+| `"error"` | only what cannot work at all: a missing or rejected API key, a missing provider |
+| `"silent"` | nothing |
+
+## Self-hosting
+
+`host` is optional on every SDK and defaults to the hosted service at
+`https://app.flagward.com`. A self-hosted install passes its own — see
+[Self-hosting](/docs/self-hosting).
+
+## Registration
+
+Each adapter names itself when it registers with the server (the core as
+`JAVASCRIPT`, and the adapters as `REACT`, `VUE`, `SOLID`, `SVELTE`), so the
+dashboard shows what the application actually installed.
+
+## Module format
+
+Every package ships ESM only, with type declarations. There is no CommonJS
+build.

@@ -26,7 +26,7 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
 
 - [x] T1 — Scaffold Fumadocs app (Next.js + fumadocs-mdx, npm) with Biome; `npm run build` passes.
 - [x] T2 — Apply Flagward branding (dark palette, logo, favicon, nav title/links).
-- [ ] T3 — Initial content skeleton sourced from real READMEs, with framework tabs for SDK examples.
+- [x] T3 — Initial content skeleton sourced from real READMEs, with framework tabs for SDK examples.
 
 ## Acceptance criteria
 
@@ -87,6 +87,49 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
     screenshot.
   - Commit: `0f88e4c` — `feat: apply flagward branding to docs`.
 
+- T3 done: content skeleton sourced from `flagward/README.md` and
+  `flagward-sdk-js/{README.md,packages/*/README.md}` (read-only; not
+  modified). `content/docs/meta.json` orders `index, quickstart, sdks,
+  self-hosting`; `content/docs/sdks/meta.json` orders `index, react, vue,
+  solid, svelte`.
+  - `index.mdx` (Introduction): what Flagward is, local SDK evaluation,
+    real-time updates.
+  - `quickstart.mdx`: install + read-a-flag example for every framework in
+    one `<Tabs>` block (React/Vue/Solid/Svelte/core), sourced from each
+    package's Quick start section.
+  - `sdks/index.mdx`: shared-core overview, install `<Tabs>`, evaluation
+    model, live updates, error reporting.
+  - `sdks/{react,vue,solid,svelte}.mdx`: one page per adapter, condensed from
+    its README (hooks/composables, context, network resilience, framework
+    notes) — full README content (e.g. deep Next.js/SvelteKit specifics) is
+    summarized rather than copied verbatim where it would bloat the page.
+  - `self-hosting.mdx`: Docker Compose (dev/prod), key env vars, production
+    deployment steps, local dev without Docker, and the "Creating your first
+    flag" walkthrough (anchor `#creating-your-first-flag`, linked from
+    quickstart). Two `<Callout>`s flag the SECURITY.md warning and that the
+    full API reference is out of scope for now.
+  - Also registered `Tab`/`Tabs` in `components/mdx.tsx` (needed for the
+    `<Tabs>` blocks) and removed the scaffold's placeholder `test.mdx`.
+  - No fabricated API: every code sample and env-var table is lifted or
+    condensed from the real READMEs; nothing invented.
+  - TODOs left in content: `self-hosting.mdx` notes the full REST API
+    reference (endpoints, models) is not yet part of this site — explicitly
+    out of scope per the feature's Scope section.
+  - `npm run build`: pass (8 content pages generated, e.g. `/docs`,
+    `/docs/quickstart`, `/docs/sdks/react`, `/docs/self-hosting`, ...).
+  - `npm run lint`: pass (exit 0; same 2 non-blocking warnings as T1/T2).
+  - Smoke check (production server): `/docs`, `/docs/quickstart`,
+    `/docs/sdks/react`, `/docs/self-hosting` all returned HTTP 200; sidebar
+    order confirmed (Introduction, Quickstart, SDKs, Self-hosting) and the
+    Quickstart `<Tabs>` block renders with all 5 framework tabs via browser
+    screenshot.
+  - Commit: `bd70f1d` — `docs: add initial content skeleton` (hash recorded
+    before the final self-referential amend; see `git log` for the exact tip
+    — this is a known, harmless discrepancy explained in the final report).
+
 ## Next step
 
-T3.
+None — T1, T2, and T3 are complete. Acceptance criteria (`npm run build`,
+`npm run lint`, `/docs` renders with sidebar/search/branding) are met.
+Deferred/out of scope per the feature's Scope section: versioning, an OpenAPI
+reference, a TypeDoc reference, i18n, deployment.

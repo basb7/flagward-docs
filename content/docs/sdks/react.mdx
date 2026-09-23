@@ -1,0 +1,155 @@
+---
+title: React
+description: '@flagward/react — provider, useFlag, and useFlags.'
+---
+
+## Installation
+
+```bash
+npm install @flagward/react
+```
+
+> Published as `flagward-sdk-react` up to 0.2.0. Same package, same API — it
+> moved into the `@flagward` scope so every SDK in this family shares one
+> namespace the project actually owns.
+
+## Quick start
+
+```tsx
+import { FlagwardProvider, useFlag } from '@flagward/react';
+
+function App() {
+  return (
+    <FlagwardProvider apiKey="your-api-key">
+      <Dashboard />
+    </FlagwardProvider>
+  );
+}
+
+function Dashboard() {
+  const { value: showNewUI } = useFlag('show-new-ui');
+
+  return showNewUI ? <NewDashboard /> : <OldDashboard />;
+}
+```
+
+## Hooks
+
+Reach for `useFlag`. One flag, one decision, one hook — it is what most
+components need:
+
+```tsx
+const { value, isLoading, error } = useFlag('new-checkout');
+```
+
+`useFlags` earns its place in three cases: the keys are not known where you
+write the code (a debug panel, an admin view); you need a flag where a hook
+cannot go (an event handler, a callback, a conditional branch — hooks cannot
+be conditional, `getFlag` can); or a component reads several flags and one
+call reads better than five.
+
+```tsx
+const { flags, isLoading, error, getFlag } = useFlags();
+
+flags; // { "new-checkout": true, ... }
+getFlag('show-banner'); // one flag, the provider's context
+getFlag('show-banner', { plan: 'pro' }); // one flag, plus this context
+```
+
+### Where context comes from
+
+```tsx
+<FlagwardProvider context={{ plan: 'free' }}> // who the user is
+useFlag('beta', { plan: 'pro' }) // just this call
+```
+
+A context passed to `useFlag` belongs to that call only — it is not
+published anywhere, and `useFlags().flags` resolves against the provider's
+context alone. Put the user in the provider (plan, country, id, locale —
+whatever your rules target), and reach for the per-call context when what
+you are evaluating is *not* the current user, such as a row in a list:
+
+```tsx
+users.map((u) => (
+  <Row key={u.id} badge={getFlag('premium-badge', { plan: u.plan })} />
+));
+```
+
+## Provider
+
+```tsx
+<FlagwardProvider
+  apiKey="your-api-key"
+  host="https://flags.example.com" // optional, defaults to https://app.flagward.com
+  context={{ userId: '123' }} // optional, used to evaluate targeting rules
+  logLevel="warn" // optional: "warn" | "error" | "silent"
+>
+  {children}
+</FlagwardProvider>
+```
+
+## Next.js
+
+The App Router works with no wrapper of your own — the provider and hooks
+declare `"use client"`, so this imports straight into a layout:
+
+```tsx
+// app/layout.tsx
+import { FlagwardProvider } from '@flagward/react';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        <FlagwardProvider apiKey={process.env.NEXT_PUBLIC_FLAGWARD_API_KEY!}>
+          {children}
+        </FlagwardProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+In a server component, hooks do not run, but the client does — reach for
+`@flagward/core` directly (already installed as a dependency of this
+package):
+
+```tsx
+// app/page.tsx
+import { FlagwardClient } from '@flagward/core';
+
+export default async function Page() {
+  const client = new FlagwardClient({ apiKey: process.env.FLAGWARD_API_KEY! });
+  await client.init();
+
+  return client.evaluate('new-checkout', { plan: 'pro' }) ? <NewCheckout /> : <LegacyCheckout />;
+}
+```
+
+`FlagwardProvider` starts its first read in an effect, which does not run on
+the server: server-rendered HTML always carries `isLoading: true`, with a
+flash of your fallback until the browser takes over. Passing a snapshot from
+server to client is open work.
+
+## Losing the network
+
+Flags are read once and evaluated locally, so a client that loses its
+connection keeps working — it just cannot notice a change until the network
+comes back or the tab is foregrounded again, at which point the SDK re-reads
+the flags.
+
+## Standalone client
+
+```ts
+import { FlagwardClient } from '@flagward/react';
+
+const client = new FlagwardClient({ apiKey: 'your-api-key' });
+await client.init();
+
+client.cachedFlags; // configured on/off state, no targeting rules applied
+client.evaluate('show-banner', { plan: 'premium' }); // targeting rules applied against this context
+client.getFlag('maintenance-mode'); // same, without context, never throws
+
+client.connect(); // keep the snapshot fresh via SSE
+client.disconnect(); // close it when done
+```

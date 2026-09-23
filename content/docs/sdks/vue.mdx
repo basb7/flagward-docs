@@ -1,0 +1,123 @@
+---
+title: Vue
+description: '@flagward/vue — plugin, useFlag, and useFlags.'
+---
+
+## Installation
+
+```bash
+npm install @flagward/vue
+```
+
+Requires Vue 3.5 or newer. `@flagward/core` comes with it — you do not
+install it separately.
+
+## Quick start
+
+Install the plugin once, on the app:
+
+```ts
+// main.ts
+import { createApp } from 'vue';
+import { flagward } from '@flagward/vue';
+import App from './App.vue';
+
+createApp(App)
+  .use(
+    flagward({
+      apiKey: 'your-environment-api-key',
+      host: 'https://flags.example.com',
+    }),
+  )
+  .mount('#app');
+```
+
+Then ask for a flag wherever the decision is actually made:
+
+```vue
+<script setup lang="ts">
+import { useFlag } from '@flagward/vue';
+
+const { value, isLoading } = useFlag('new-checkout');
+</script>
+
+<template>
+  <LegacyCheckout v-if="isLoading" />
+  <NewCheckout v-else-if="value" />
+  <LegacyCheckout v-else />
+</template>
+```
+
+Nothing has to be wrapped — a flag is asked for where the decision is made,
+not where somebody remembered to put a provider.
+
+## The value is a ref
+
+Composables return `ComputedRef`s, so destructuring keeps reactivity.
+Templates unwrap them for you; in `<script>` read `.value`:
+
+```ts
+const { value } = useFlag('new-checkout');
+
+if (value.value) {
+  /* ... */
+}
+```
+
+## The context can be reactive
+
+Everywhere a context is taken — the plugin, `useFlag`, `getFlag` — it
+accepts a ref or a getter as readily as a plain object:
+
+```ts
+const user = ref({ plan: 'standard' });
+const { value } = useFlag('beta', user);
+
+user.value = { plan: 'pro' }; // the flag re-evaluates, the DOM updates
+```
+
+This matters because what an application targets on is not fixed: somebody
+signs in, changes plan, switches locale. A context read once at startup
+would answer every later evaluation with what was true at startup.
+
+## Composables
+
+Reach for `useFlag`. `useFlags` earns its place when the keys are not known
+where you write the code, when you need a flag where a composable cannot go
+(`getFlag` runs anywhere), or when a component reads several flags:
+
+```ts
+const { flags, isLoading, error, getFlag } = useFlags();
+
+flags.value; // { "new-checkout": true, ... }
+getFlag('beta'); // one flag, app context
+getFlag('beta', { plan: 'pro' }); // one flag, this context
+```
+
+### Where context comes from
+
+```ts
+app.use(flagward({ apiKey, context: user })); // who the user is
+useFlag('beta', { plan: 'pro' }); // just this call
+```
+
+A context passed to `useFlag` belongs to that call only — it is not
+published anywhere, and the map `useFlags` returns resolves against the
+plugin's context alone.
+
+## Losing the network
+
+The plugin opens an SSE stream and keeps it in step on its own: a flag
+changed on the server reaches every component within a second, coming back
+online re-reads the flags, and where there is no `EventSource` — server
+rendering, plain Node — live updates are reported as off while the flags
+already read keep working.
+
+## Outside Vue
+
+```ts
+import { FlagwardClient, evaluateFlag } from '@flagward/vue';
+```
+
+The client and the evaluator are re-exported here, so a store, a router
+guard, or a plain module can use them without a component.

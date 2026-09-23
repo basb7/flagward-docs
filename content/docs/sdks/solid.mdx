@@ -1,0 +1,124 @@
+---
+title: Solid
+description: '@flagward/solid — provider, useFlag, and useFlags.'
+---
+
+## Installation
+
+```bash
+npm install @flagward/solid
+```
+
+Requires Solid 1.8 or newer. `@flagward/core` comes with it — you do not
+install it separately.
+
+## Quick start
+
+Wrap the app in the provider once:
+
+```tsx
+// index.tsx
+import { render } from 'solid-js/web';
+import { FlagwardProvider } from '@flagward/solid';
+import App from './App';
+
+render(
+  () => (
+    <FlagwardProvider apiKey="your-environment-api-key" host="https://flags.example.com">
+      <App />
+    </FlagwardProvider>
+  ),
+  document.getElementById('root')!,
+);
+```
+
+Then ask for a flag wherever the decision is actually made:
+
+```tsx
+import { useFlag } from '@flagward/solid';
+
+function Checkout() {
+  const { value, isLoading } = useFlag('new-checkout');
+
+  return (
+    <Switch>
+      <Match when={isLoading()}>
+        <LegacyCheckout />
+      </Match>
+      <Match when={value()}>
+        <NewCheckout />
+      </Match>
+      <Match when={!value()}>
+        <LegacyCheckout />
+      </Match>
+    </Switch>
+  );
+}
+```
+
+## The value is an accessor
+
+Hooks return `Accessor`s, so calling them inside JSX keeps the fine-grained
+tracking Solid is built around:
+
+```tsx
+const { value } = useFlag('new-checkout');
+
+if (value()) {
+  /* ... */
+}
+```
+
+## The context can be reactive
+
+Everywhere a context is taken — the provider, `useFlag`, `getFlag` — it
+accepts a signal or a plain getter as readily as a plain object:
+
+```tsx
+const [user, setUser] = createSignal({ plan: 'standard' });
+const { value } = useFlag('beta', user);
+
+setUser({ plan: 'pro' }); // the flag re-evaluates, the DOM updates
+```
+
+## Hooks
+
+Reach for `useFlag`. `useFlags` earns its place when the keys are not known
+where you write the code, when you need a flag where a hook cannot go
+(`getFlag` runs anywhere), or when a component reads several flags:
+
+```tsx
+const { flags, isLoading, error, getFlag } = useFlags();
+
+flags(); // { "new-checkout": true, ... }
+getFlag('beta'); // one flag, app context
+getFlag('beta', { plan: 'pro' }); // one flag, this context
+```
+
+### Where context comes from
+
+```tsx
+<FlagwardProvider apiKey={apiKey} context={user}> // who the user is
+useFlag('beta', { plan: 'pro' }) // just this call
+```
+
+A context passed to `useFlag` belongs to that call only — it is not
+published anywhere, and the map `useFlags` returns resolves against the
+provider's context alone.
+
+## Losing the network
+
+The provider opens an SSE stream and keeps it in step on its own: a flag
+changed on the server reaches every component within a second, coming back
+online re-reads the flags, and where there is no `EventSource` — server
+rendering, plain Node — live updates are reported as off while the flags
+already read keep working.
+
+## Outside Solid
+
+```ts
+import { FlagwardClient, evaluateFlag } from '@flagward/solid';
+```
+
+The client and the evaluator are re-exported here, so a store, a route
+guard, or a plain module can use them without a component.
