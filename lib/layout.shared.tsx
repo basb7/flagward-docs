@@ -78,7 +78,17 @@ export function baseOptions(_locale: string): BaseLayoutProps {
     nav: {
       title: (
         <>
-          <Image src="/logo.png" alt="" width={24} height={30} priority />
+          <Image
+            src="/logo.png"
+            alt=""
+            width={24}
+            height={30}
+            // Tailwind preflight sets `height: auto` on images; pin the height
+            // and let the width follow the intrinsic ratio so next/image does
+            // not flag a one-sided size change.
+            style={{ height: 30, width: 'auto' }}
+            priority
+          />
           {appName}
         </>
       ),

@@ -31,6 +31,7 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
 - [x] T5 — i18n infrastructure (`en` default, `es`): `defineI18n` with `hideLocale: 'default-locale'` and English fallback, `app/[lang]` routing, proxy combining i18n middleware with markdown rewrites, locale-aware search/OG/llms routes, Spanish UI translations, language switcher. Route: delegated direct (writer trigger: 2+ non-trivial files).
 - [x] T6 — Spanish translations for Introduction and Quickstart (neutral professional Spanish). SDK and self-hosting pages fall back to English for now. Route: delegated direct (same writer).
 - [x] T7 — Review follow-ups: redirect default-locale-prefixed markdown requests in `proxy.ts` before the rewrites (`/en/x.md`, `/en/x` + `Accept: text/markdown`); fix the Solid accessor example so it reads the flag inside a tracking scope. Route: direct inline (two small, understood edits).
+- [ ] T8 — Spanish translations for the remaining pages: `sdks/index`, `sdks/react`, `sdks/vue`, `sdks/solid`, `sdks/svelte`, `self-hosting` (neutral professional Spanish), plus Spanish sidebar folder titles if needed. Route: delegated direct (writer trigger: 6 non-trivial files).
 
 ## Acceptance criteria
 
@@ -169,6 +170,12 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
   - Browser (user's `next dev` on :3000): no console error on `/quickstart` or
     `/es/quickstart`; `<html>` keeps `dark`, black background, correct `lang`.
     Remaining dev warning: `/logo.png` `next/image` width/height aspect ratio.
+
+- Fix (dev warning `next/image` one-sided size change on `/logo.png`): Tailwind
+  preflight `height: auto` rendered the logo at 30.5px against `height={30}`
+  (intrinsic 76×96). `lib/layout.shared.tsx` now pins `height: 30` with
+  `width: 'auto'`. Browser: both logo instances render 24×30, warning gone
+  after reload. `npm run lint`: pass.
 
 ## Review
 
