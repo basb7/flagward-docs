@@ -64,6 +64,15 @@ Out of scope: structured data (JSON-LD), analytics, Search Console setup.
   - Dev server on `:3000` (untouched, still running): `/quickstart` 200.
 - Commit `feat: add hreflang alternates, sitemap, robots and open graph fields` on `feat/seo`. No push, no PR (per instructions).
 
+## Review
+
+- Range `f8cb964..1fe363c`: medium (under budget, 198 lines), consent granted, lineage `review-4e39e5265a1a4bd7` approved and acknowledged.
+- Non-blocking follow-ups (latent today: every page exists in both locales):
+  - A page that exists only in `es` would crash `generateMetadata` (non-null assertion on the default-language page for `x-default`) and emit an `undefined` URL in the sitemap.
+  - Fallback pages (`/es/<page>` serving English content) are self-canonical with `og:locale=es_ES` and appear in the sitemap outside their own hreflang cluster; they should canonicalize to the English URL (and be left out of the sitemap).
+  - `getTranslatedLanguages` relies on a fumadocs internal (`absolutePath` of fallback storage) with no automated test.
+  - `robots.txt`/`sitemap.xml` matcher exclusions are unanchored prefixes (same as the existing `llms.txt` entry).
+
 ## Next step
 
 Feature complete; ready for the user to review/push `feat/seo`.
