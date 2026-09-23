@@ -127,6 +127,11 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
     before the final self-referential amend; see `git log` for the exact tip
     — this is a known, harmless discrepancy explained in the final report).
 
+## Review
+
+- Range `e45deb3..54717f6` (T2+T3): assessed medium (`slice_budget_reached`), consent granted, lineage `review-3f23edc4c0fbd8a1` approved and acknowledged. T1 (root commit) is outside the reviewed range.
+- Non-blocking follow-ups: `metadataBase` placeholder domain in `app/layout.tsx` (read from env); Solid example in `content/docs/sdks/solid.mdx` calls `value()` outside a tracking scope.
+
 ## Next step
 
 None — T1, T2, and T3 are complete. Acceptance criteria (`npm run build`,
