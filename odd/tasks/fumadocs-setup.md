@@ -30,6 +30,7 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
 - [x] T4 — Serve docs at the site root (deployment target `docs.flagward.com`): drop the `/docs` prefix from pages, OG images, markdown routes, proxy rewrites, and content links. Route: direct inline (mechanical, already understood).
 - [x] T5 — i18n infrastructure (`en` default, `es`): `defineI18n` with `hideLocale: 'default-locale'` and English fallback, `app/[lang]` routing, proxy combining i18n middleware with markdown rewrites, locale-aware search/OG/llms routes, Spanish UI translations, language switcher. Route: delegated direct (writer trigger: 2+ non-trivial files).
 - [x] T6 — Spanish translations for Introduction and Quickstart (neutral professional Spanish). SDK and self-hosting pages fall back to English for now. Route: delegated direct (same writer).
+- [x] T7 — Review follow-ups: redirect default-locale-prefixed markdown requests in `proxy.ts` before the rewrites (`/en/x.md`, `/en/x` + `Accept: text/markdown`); fix the Solid accessor example so it reads the flag inside a tracking scope. Route: direct inline (two small, understood edits).
 
 ## Acceptance criteria
 
@@ -143,6 +144,21 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
     `/og/quickstart/image.png`, `/llms.txt`, `/api/search`, `/logo.png`;
     `Accept: text/markdown` on `/quickstart` returns markdown; `/docs` 404 (expected,
     never deployed).
+
+- T7 done: `proxy.ts` now redirects `/en` and `/en/...` (307, query preserved)
+  to the unprefixed URL before the markdown rewrites run. `solid.mdx` accessor
+  example now reads the flag inside JSX (`<Show>`), with a note that a plain
+  `if (value())` in the component body runs once. The Solid README uses the
+  same `if` snippet only to show `value` is a function; the docs page is where
+  the prose and example contradicted each other.
+  - `npm run build`: pass. `npm run lint`: pass (same 2 scaffold warnings).
+  - Smoke (production server): 307 `/en/quickstart.md` → `/quickstart.md`,
+    `/en/quickstart` (HTML and `Accept: text/markdown`) → `/quickstart`,
+    `/en` → `/`, query string kept; 200 on `/`, `/quickstart`, `/es/quickstart`,
+    `/es/sdks/react`, `.md` routes (en/es), `llms.mdx`, `og`, `llms.txt`,
+    `/api/search`, `/sdks/solid`, `/logo.png`.
+  - Still open: `proxy.ts` matcher exclusions are unanchored; no unit test for
+    `lib/i18n.ts` helpers (no test runner); docs repo URL TODO in `lib/shared.ts`.
 
 ## Review
 

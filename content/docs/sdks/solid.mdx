@@ -64,10 +64,16 @@ tracking Solid is built around:
 ```tsx
 const { value } = useFlag('new-checkout');
 
-if (value()) {
-  /* ... */
-}
+return (
+  <Show when={value()} fallback={<LegacyCheckout />}>
+    <NewCheckout />
+  </Show>
+);
 ```
+
+A plain `if (value())` in the component body runs once, outside any tracking
+scope, so it does not re-run when the flag changes. Read the accessor inside
+JSX, `createMemo`, or `createEffect` when the result must stay live.
 
 ## The context can be reactive
 

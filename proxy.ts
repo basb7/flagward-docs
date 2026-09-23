@@ -30,14 +30,31 @@ const i18nMiddleware = createI18nMiddleware({
   cookieName: 'NEXT_LOCALE',
 });
 
+// The default locale has no URL prefix (`hideLocale: 'default-locale'`).
+const defaultLocalePrefix = `/${i18n.defaultLanguage}`;
+
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
-  const result = rewriteSuffix(request.nextUrl.pathname);
+  const { pathname } = request.nextUrl;
+
+  // Redirect `/en/...` to its unprefixed URL before the markdown rewrites,
+  // which would otherwise treat `en` as a page slug and 404. This keeps the
+  // markdown and HTML representations consistent with the i18n middleware.
+  if (
+    pathname === defaultLocalePrefix ||
+    pathname.startsWith(`${defaultLocalePrefix}/`)
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.slice(defaultLocalePrefix.length) || '/';
+    return NextResponse.redirect(url);
+  }
+
+  const result = rewriteSuffix(pathname);
   if (result) {
     return NextResponse.rewrite(new URL(result, request.nextUrl));
   }
 
   if (isMarkdownPreferred(request)) {
-    const result = rewriteDocs(request.nextUrl.pathname);
+    const result = rewriteDocs(pathname);
 
     if (result) {
       return NextResponse.rewrite(new URL(result, request.nextUrl), {
