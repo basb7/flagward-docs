@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { LocaleProvider } from '@/components/locale-provider';
 import { translations } from '@/lib/layout.shared';
+import { docsTitle, siteUrl } from '@/lib/shared';
 import '../global.css';
 
 const geistSans = Geist({
@@ -16,10 +17,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://docs.flagward.com'),
+  metadataBase: new URL(siteUrl),
   title: {
-    default: 'Flagward Docs',
-    template: '%s | Flagward Docs',
+    default: docsTitle,
+    template: `%s | ${docsTitle}`,
   },
   description:
     'Documentation for Flagward: open-source feature flags with local SDK evaluation and real-time updates.',

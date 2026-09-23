@@ -16,6 +16,16 @@ export const i18n = defineI18n({
   hideLocale: 'default-locale',
 });
 
+export type Locale = (typeof i18n.languages)[number];
+
+// Open Graph locales are `language_TERRITORY`, unlike our plain language
+// codes. Neutral content, so `es` maps to the conventional default
+// territory (`es_ES`) rather than a specific Spanish-speaking country.
+export const ogLocales: Record<Locale, string> = {
+  en: 'en_US',
+  es: 'es_ES',
+};
+
 /**
  * `/og` and `/llms.mdx` are route handlers and stay outside `app/[lang]`
  * (see the Fumadocs Next.js i18n guide). They encode the locale as the

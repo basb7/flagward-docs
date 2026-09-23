@@ -2,6 +2,8 @@ import { createGetUrl } from 'fumadocs-core/source';
 import { withLocaleSegment } from './i18n';
 
 export const appName = 'Flagward';
+export const docsTitle = 'Flagward Docs';
+export const siteUrl = 'https://docs.flagward.com';
 export const docsRoute = '/';
 export const docsImageRoute = '/og';
 export const docsContentRoute = '/llms.mdx';

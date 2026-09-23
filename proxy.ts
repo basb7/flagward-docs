@@ -95,6 +95,6 @@ export const config = {
   // Docs are served from the site root, so keep the markdown rewrites away
   // from API, OG image, llms routes, Next.js internals, and static assets.
   matcher: [
-    '/((?!api/|og/|llms\\.mdx/|llms\\.txt|llms-full\\.txt|_next/|.*\\.(?:png|ico|svg|jpg|jpeg|webp)$).*)',
+    '/((?!api/|og/|llms\\.mdx/|llms\\.txt|llms-full\\.txt|robots\\.txt|sitemap\\.xml|_next/|.*\\.(?:png|ico|svg|jpg|jpeg|webp)$).*)',
   ],
 };
