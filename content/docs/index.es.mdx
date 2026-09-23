@@ -1,0 +1,41 @@
+---
+title: Introducción
+description: Qué es Flagward y cómo evalúa las flags.
+---
+
+Flagward es un sistema de feature flags de código abierto: un backend en
+Django con almacenamiento en Redis, un panel en Next.js y SDKs para evaluar
+flags directamente en tu aplicación.
+
+## Evaluación local
+
+Un SDK descarga las reglas de la flag para su entorno una sola vez y las
+evalúa **en tu propio proceso**, no por HTTP. Comprobar una flag nunca
+bloquea a la espera de una llamada de red — cuesta más o menos lo mismo que
+leer un objeto normal.
+
+## Actualizaciones en tiempo real
+
+Los cambios de flags se transmiten a cada SDK conectado mediante
+Server-Sent Events (SSE), de modo que una flag activada en el panel llega a
+los clientes en producción en menos de un segundo, sin necesidad de un
+redeploy ni de recargar la página. Si la conexión de un cliente se
+interrumpe, este vuelve a leer las flags en cuanto se restablece, así que
+un cambio realizado durante una interrupción nunca se pierde silenciosamente.
+
+## Otras cosas que conviene saber de antemano
+
+- **Interruptores de emergencia (kill switches)** — fuerzan una flag a
+  encendida o apagada durante un incidente, con un registro de auditoría,
+  sin tocar la configuración propia de la flag.
+- **Reglas de segmentación** — flags booleanas y multivariantes, evaluadas
+  contra un contexto de usuario, con despliegues graduales por porcentaje.
+- **Autoalojable** — a un solo `docker compose up` de distancia; consulta
+  [Autoalojamiento](/es/self-hosting).
+
+## A dónde ir a continuación
+
+- [Guía rápida](/es/quickstart) — instala un SDK y lee tu primera flag.
+- [SDKs](/es/sdks) — los SDKs de JavaScript: `@flagward/core` y un adaptador
+  por framework.
+- [Autoalojamiento](/es/self-hosting) — ejecuta Flagward con Docker Compose.

@@ -1,0 +1,188 @@
+---
+title: Guía rápida
+description: Instala un SDK y lee tu primera flag.
+---
+
+Elige tu framework, instala su paquete y lee una flag. Todos los SDKs
+comparten el mismo núcleo: las flags se descargan una sola vez y se evalúan
+localmente, así que comprobar una flag nunca bloquea a la espera de la red.
+
+La clave de API de un entorno se crea en el panel, en
+**Environments → New Environment** — consulta
+[Creando tu primera flag](/es/self-hosting#creating-your-first-flag) para
+ver el recorrido completo.
+
+<Tabs items={['React', 'Vue', 'Solid', 'Svelte', 'Core (vanilla JS)']}>
+  <Tab value="React">
+    ```bash
+    npm install @flagward/react
+    ```
+
+    ```tsx
+    import { FlagwardProvider, useFlag } from '@flagward/react';
+
+    function App() {
+      return (
+        <FlagwardProvider apiKey="your-environment-api-key">
+          <Dashboard />
+        </FlagwardProvider>
+      );
+    }
+
+    function Dashboard() {
+      const { value: showNewUI, isLoading } = useFlag('show-new-ui');
+
+      if (isLoading) return <OldDashboard />;
+      return showNewUI ? <NewDashboard /> : <OldDashboard />;
+    }
+    ```
+
+    Consulta la página del [SDK de React](/es/sdks/react) para conocer los
+    hooks, el contexto y las notas sobre Next.js.
+  </Tab>
+  <Tab value="Vue">
+    ```bash
+    npm install @flagward/vue
+    ```
+
+    ```ts
+    // main.ts
+    import { createApp } from 'vue';
+    import { flagward } from '@flagward/vue';
+    import App from './App.vue';
+
+    createApp(App)
+      .use(flagward({ apiKey: 'your-environment-api-key' }))
+      .mount('#app');
+    ```
+
+    ```vue
+    <!-- Dashboard.vue -->
+    <script setup lang="ts">
+    import { useFlag } from '@flagward/vue';
+
+    const { value, isLoading } = useFlag('show-new-ui');
+    </script>
+
+    <template>
+      <OldDashboard v-if="isLoading || !value" />
+      <NewDashboard v-else />
+    </template>
+    ```
+
+    Consulta la página del [SDK de Vue](/es/sdks/vue) para conocer los
+    composables y el contexto reactivo.
+  </Tab>
+  <Tab value="Solid">
+    ```bash
+    npm install @flagward/solid
+    ```
+
+    ```tsx
+    // index.tsx
+    import { render } from 'solid-js/web';
+    import { FlagwardProvider } from '@flagward/solid';
+    import App from './App';
+
+    render(
+      () => (
+        <FlagwardProvider apiKey="your-environment-api-key">
+          <App />
+        </FlagwardProvider>
+      ),
+      document.getElementById('root')!,
+    );
+    ```
+
+    ```tsx
+    // Dashboard.tsx
+    import { useFlag } from '@flagward/solid';
+
+    function Dashboard() {
+      const { value, isLoading } = useFlag('show-new-ui');
+
+      return isLoading() || !value() ? <OldDashboard /> : <NewDashboard />;
+    }
+    ```
+
+    Consulta la página del [SDK de Solid](/es/sdks/solid) para conocer las
+    signals y el contexto reactivo.
+  </Tab>
+  <Tab value="Svelte">
+    ```bash
+    npm install @flagward/svelte
+    ```
+
+    ```svelte
+    <!-- +layout.svelte -->
+    <script lang="ts">
+      import { setFlagward } from '@flagward/svelte';
+
+      setFlagward({ apiKey: 'your-environment-api-key' });
+    </script>
+
+    <slot />
+    ```
+
+    ```svelte
+    <!-- Dashboard.svelte -->
+    <script lang="ts">
+      import { useFlag } from '@flagward/svelte';
+
+      const flag = useFlag('show-new-ui');
+    </script>
+
+    {#if $flag.isLoading || !$flag.value}
+      <OldDashboard />
+    {:else}
+      <NewDashboard />
+    {/if}
+    ```
+
+    Consulta la página del [SDK de Svelte](/es/sdks/svelte) para conocer las
+    notas sobre SvelteKit y SSR.
+  </Tab>
+  <Tab value="Core (vanilla JS)">
+    ```bash
+    npm install @flagward/core
+    ```
+
+    ```js
+    import { FlagwardClient } from '@flagward/core';
+
+    const client = new FlagwardClient({
+      apiKey: 'your-environment-api-key',
+    });
+
+    await client.init();
+
+    if (client.getFlag('show-new-ui')) {
+      // ...
+    }
+    ```
+
+    Todos los adaptadores de framework reexportan este cliente, así que
+    recurre a `@flagward/core` directamente fuera de un framework — un
+    script plano, un servidor, o un framework que aún no tenga un adaptador
+    dedicado. Consulta la [Descripción general de los SDKs](/es/sdks) para
+    más detalles.
+  </Tab>
+</Tabs>
+
+## Actualizaciones en vivo
+
+Llama a `client.connect()` (o usa el provider del adaptador, que lo hace por
+ti) para abrir un stream de Server-Sent Events y mantener la copia local
+sincronizada con el servidor — consulta [SDKs](/es/sdks#live-updates).
+
+## Autoalojamiento
+
+Apunta `host` a tu propia instancia en lugar del destino alojado por
+defecto:
+
+```js
+new FlagwardClient({ apiKey, host: 'https://flags.example.com' });
+```
+
+Consulta [Autoalojamiento](/es/self-hosting) para ejecutar Flagward con
+Docker Compose.

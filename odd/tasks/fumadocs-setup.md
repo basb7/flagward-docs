@@ -29,7 +29,7 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
 - [x] T3 — Initial content skeleton sourced from real READMEs, with framework tabs for SDK examples.
 - [x] T4 — Serve docs at the site root (deployment target `docs.flagward.com`): drop the `/docs` prefix from pages, OG images, markdown routes, proxy rewrites, and content links. Route: direct inline (mechanical, already understood).
 - [x] T5 — i18n infrastructure (`en` default, `es`): `defineI18n` with `hideLocale: 'default-locale'` and English fallback, `app/[lang]` routing, proxy combining i18n middleware with markdown rewrites, locale-aware search/OG/llms routes, Spanish UI translations, language switcher. Route: delegated direct (writer trigger: 2+ non-trivial files).
-- [ ] T6 — Spanish translations for Introduction and Quickstart (neutral professional Spanish). SDK and self-hosting pages fall back to English for now. Route: delegated direct (same writer).
+- [x] T6 — Spanish translations for Introduction and Quickstart (neutral professional Spanish). SDK and self-hosting pages fall back to English for now. Route: delegated direct (same writer).
 
 ## Acceptance criteria
 
@@ -227,7 +227,39 @@ Out of scope: versioning (deferred until a real breaking change), OpenAPI refere
     'default-locale'`).
   - Commit: see git log (`feat: add english and spanish i18n`).
 
+- T6 done: `content/docs/index.es.mdx` and `content/docs/quickstart.es.mdx`
+  (dot-parser convention, next to their English source). Neutral professional
+  Spanish (no voseo, no regional slang); frontmatter `title`/`description`
+  translated; code, identifiers, package names, commands, and API names left
+  unchanged. Internal links rewritten to `/es/...`, including links to the
+  still-untranslated `self-hosting`/`sdks` pages (`/es/self-hosting#creating-your-first-flag`,
+  `/es/sdks/react`, `/es/sdks/vue`, `/es/sdks/solid`, `/es/sdks/svelte`,
+  `/es/sdks#live-updates`, `/es/sdks`), which resolve via the English
+  fallback. No `meta.es.json`: sidebar titles come from each page's own
+  frontmatter `title`, not `meta.json`, so none was needed.
+  - `npm run build`: pass. `npm run lint`: pass (same 2 pre-existing
+    non-blocking warnings; Biome's `files.includes` doesn't cover `content/**`,
+    so the new `.mdx` files aren't linted by it, consistent with T3).
+  - Verification (production server, port 3124): 200 on `/`, `/quickstart`,
+    `/sdks/react`, `/es`, `/es/quickstart`, `/es/sdks/react` (fallback, still
+    200), `/quickstart.md`, `/es/quickstart.md`,
+    `/llms.mdx/quickstart/content.md`, `/llms.mdx/es/quickstart/content.md`,
+    `/og/quickstart/image.png`, `/og/es/quickstart/image.png`, `/llms.txt`,
+    `/llms-full.txt`, `/api/search?query=flag`,
+    `/api/search?query=bandera&locale=es`, `/logo.png`. `/es/quickstart` HTML:
+    `lang="es"`, `<title>Guía rápida | Flagward Docs`.  `/quickstart` HTML:
+    `lang="en"`. `/es/sdks/react` (untranslated, fallback): `lang="es"`,
+    `<title>React | Flagward Docs` (English content, Spanish `lang`, as
+    expected from `fallbackLanguage`). `/en/quickstart` → 307 redirect to
+    `/quickstart`. `Accept: text/markdown` on `/es/quickstart` returns
+    Spanish Markdown (`# Guía rápida (/es/quickstart)`).
+  - Commit: see git log (`docs: add spanish introduction and quickstart`).
+
 ## Next step
 
-T6 — Spanish translations of `content/docs/index.mdx` and
-`content/docs/quickstart.mdx`.
+None — T1–T6 are complete. Acceptance criteria (`npm run build`, `npm run
+lint`, docs render with sidebar/search/branding, English and Spanish both
+serve) are met. Deferred/out of scope per the feature's Scope section:
+versioning, an OpenAPI reference, a TypeDoc reference, deployment, and
+Spanish translations for the SDK/self-hosting pages (they fall back to
+English).
