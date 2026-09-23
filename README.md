@@ -23,6 +23,17 @@ Open http://localhost:3000/docs with your browser to see the result.
 | `npm run lint:fix` | Apply Biome's safe fixes. |
 | `npm run format` | Format files with Biome. |
 
+## Run with Docker
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+Open http://localhost:3001 with your browser to see the result. Change the
+host port by setting `DOCS_PORT` in `.env` (the container always listens on
+3000).
+
 ## Project layout
 
 - `content/docs`: MDX content, ordered by `meta.json` in each folder.

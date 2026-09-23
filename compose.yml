@@ -1,0 +1,14 @@
+name: flagward-docs
+
+services:
+  docs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    restart: always
+    # flagward-landing and the app stack's frontend both publish 3000, so
+    # the host side defaults to 3001 to let all three run on the same
+    # machine; the container always listens on 3000.
+    ports:
+      - "${DOCS_PORT:-3001}:3000"
