@@ -1,0 +1,135 @@
+---
+title: OpenFeature
+description: '@flagward/openfeature-web — un provider de OpenFeature para el navegador.'
+---
+
+[OpenFeature](https://openfeature.dev) es la API estándar de la CNCF para
+feature flags. `@flagward/openfeature-web` es un provider para su SDK web:
+una aplicación que ya evalúa flags con OpenFeature se cambia a Flagward
+cambiando el provider, y nada más.
+
+Si tu aplicación no usa OpenFeature, el adaptador de Flagward para tu
+framework es la opción más simple.
+
+<Callout type="info">
+  Este provider es para el navegador (`@openfeature/web-sdk`). Todavía no
+  existe un provider de servidor para `@openfeature/server-sdk`.
+</Callout>
+
+## Instalación
+
+```bash
+npm install @openfeature/web-sdk @flagward/openfeature-web
+```
+
+`@flagward/core` viene incluido con el provider — no lo instalas por
+separado.
+
+## Guía rápida
+
+```ts
+import { OpenFeature } from '@openfeature/web-sdk';
+import { FlagwardWebProvider } from '@flagward/openfeature-web';
+
+await OpenFeature.setContext({ targetingKey: user.id, country: user.country });
+await OpenFeature.setProviderAndWait(
+  new FlagwardWebProvider({
+    apiKey: 'your-environment-api-key',
+    host: 'https://flags.example.com',
+  }),
+);
+
+const client = OpenFeature.getClient();
+
+if (client.getBooleanValue('new-checkout', false)) {
+  renderNewCheckout();
+}
+```
+
+Las opciones son las mismas que las del cliente del núcleo: `apiKey`,
+`host`, `timeout` y `logLevel`. `host` apunta por defecto al servicio
+alojado en `https://app.flagward.com`.
+
+Si vienes de otro provider, el cambio es solo el provider:
+
+```diff
+- OpenFeature.setProvider(new SomeOtherProvider(...));
++ OpenFeature.setProvider(new FlagwardWebProvider({ apiKey }));
+```
+
+## El contexto de evaluación
+
+Las reglas de Flagward leen el contexto que guarda OpenFeature:
+
+- `targetingKey` se convierte en `user_id`, la identidad con la que se
+  reparten los rollouts por porcentaje y las variantes. Un atributo
+  `user_id` se usa solo cuando no hay targeting key.
+- Cualquier otro atributo es un trait con su propio nombre: `country` en el
+  contexto es lo que lee una regla `country EQUALS US`.
+
+Cambiar el contexto con `OpenFeature.setContext` no necesita nada del
+servidor — la siguiente evaluación ya lo usa.
+
+## Tipos de flag
+
+| Llamada de OpenFeature | Flag de Flagward | Valor |
+| --- | --- | --- |
+| `getBooleanValue` | BOOLEAN | el resultado de la flag |
+| `getBooleanValue` | MULTIVARIATE | si la flag está habilitada |
+| `getStringValue` | MULTIVARIATE | el nombre de la variante |
+| `getStringValue` | BOOLEAN | tu valor por defecto, con `TYPE_MISMATCH` |
+| `getNumberValue`, `getObjectValue` | cualquiera | tu valor por defecto, con `TYPE_MISMATCH` |
+
+Una key que el entorno no tiene responde con tu valor por defecto y
+`FLAG_NOT_FOUND`.
+
+## Razones
+
+`getBooleanDetails` y `getStringDetails` dicen por qué se eligió un valor:
+
+| Razón | Cuándo |
+| --- | --- |
+| `TARGETING_MATCH` | una regla coincidió y decidió el valor |
+| `SPLIT` | el bucket del hash del usuario eligió la variante |
+| `DEFAULT` | nada apuntó al usuario: ninguna regla coincidió, o no hay targeting key para repartir (la variante de control) |
+| `STATIC` | el valor no depende del usuario: un override, o una flag habilitada sin nada que segmentar |
+| `DISABLED` | la flag está apagada |
+
+```ts
+client.getStringDetails('checkout-flow', 'control');
+// { value: 'treatment', variant: 'treatment', reason: 'SPLIT', ... }
+```
+
+## Actualizaciones en vivo
+
+Cuando una flag cambia en el dashboard, el provider emite
+`ConfigurationChanged`:
+
+```ts
+import { ProviderEvents } from '@openfeature/web-sdk';
+
+client.addHandler(ProviderEvents.ConfigurationChanged, () => rerender());
+```
+
+Si las flags no se pueden cargar — una API key incorrecta, un host
+inalcanzable — `setProviderAndWait` rechaza, el provider queda en estado
+`ERROR` y cada evaluación responde con su valor por defecto.
+
+## Frameworks
+
+Los SDKs propios de OpenFeature se construyen sobre este provider:
+
+- React: `@openfeature/react-sdk`
+- Angular: `@openfeature/angular-sdk`
+
+Vue, Solid y Svelte no tienen SDK de OpenFeature. Ahí usas
+`@openfeature/web-sdk` directamente, o el adaptador de Flagward para el
+framework.
+
+Elige una sola puerta de entrada por aplicación. El provider y un adaptador
+de Flagward crean cada uno su propio cliente, así que usar ambos significa
+dos conexiones y dos cachés que pueden diferir por un momento.
+
+## Registro
+
+El provider se registra en el servidor como `OPENFEATURE_WEB`.
