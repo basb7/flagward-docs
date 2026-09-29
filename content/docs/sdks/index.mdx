@@ -13,6 +13,7 @@ framework.
 | [`@flagward/vue`](/sdks/vue) | `@flagward/vue` | The Vue adapter: a plugin, `useFlag` and `useFlags`. |
 | [`@flagward/solid`](/sdks/solid) | `@flagward/solid` | The Solid adapter: a provider, `useFlag` and `useFlags`. |
 | [`@flagward/svelte`](/sdks/svelte) | `@flagward/svelte` | The Svelte adapter: `setFlagward`, `useFlag` and `useFlags`, built on `svelte/store`. |
+| [`@flagward/openfeature-web`](/sdks/openfeature) | `@flagward/openfeature-web` | An [OpenFeature](https://openfeature.dev) web provider, for applications that evaluate flags through `@openfeature/web-sdk`. |
 
 Every adapter re-exports `@flagward/core`, so installing the adapter for your
 framework is enough — you never need both.
@@ -106,8 +107,9 @@ with `[Flagward]`. `logLevel` narrows it:
 ## Registration
 
 Each adapter names itself when it registers with the server (the core as
-`JAVASCRIPT`, and the adapters as `REACT`, `VUE`, `SOLID`, `SVELTE`), so the
-dashboard shows what the application actually installed.
+`JAVASCRIPT`, the adapters as `REACT`, `VUE`, `SOLID`, `SVELTE`, and the
+OpenFeature provider as `OPENFEATURE_WEB`), so the dashboard shows what the
+application actually installed.
 
 ## Module format
 

@@ -13,6 +13,7 @@ ligero por framework.
 | [`@flagward/vue`](/es/sdks/vue) | `@flagward/vue` | El adaptador de Vue: un plugin, `useFlag` y `useFlags`. |
 | [`@flagward/solid`](/es/sdks/solid) | `@flagward/solid` | El adaptador de Solid: un provider, `useFlag` y `useFlags`. |
 | [`@flagward/svelte`](/es/sdks/svelte) | `@flagward/svelte` | El adaptador de Svelte: `setFlagward`, `useFlag` y `useFlags`, construidos sobre `svelte/store`. |
+| [`@flagward/openfeature-web`](/es/sdks/openfeature) | `@flagward/openfeature-web` | Un provider web de [OpenFeature](https://openfeature.dev), para aplicaciones que evalúan flags con `@openfeature/web-sdk`. |
 
 Cada adaptador reexporta `@flagward/core`, así que instalar el adaptador de
 tu framework es suficiente — nunca necesitas ambos.
@@ -109,9 +110,9 @@ página, con el prefijo `[Flagward]`. `logLevel` lo acota:
 ## Registro
 
 Cada adaptador se identifica a sí mismo al registrarse con el servidor (el
-núcleo como `JAVASCRIPT`, y los adaptadores como `REACT`, `VUE`, `SOLID`,
-`SVELTE`), de modo que el panel muestra lo que la aplicación realmente
-instaló.
+núcleo como `JAVASCRIPT`, los adaptadores como `REACT`, `VUE`, `SOLID`,
+`SVELTE`, y el provider de OpenFeature como `OPENFEATURE_WEB`), de modo que
+el panel muestra lo que la aplicación realmente instaló.
 
 ## Formato de módulo
 
