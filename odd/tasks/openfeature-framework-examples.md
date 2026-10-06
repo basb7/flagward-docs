@@ -20,7 +20,14 @@ Out of scope: server-side SDKs (no server provider exists), OFREP.
 
 - [x] T1 Add listing link + React and Angular examples (en + es)
 - [x] T2 Verify lint, types and build
+- [x] T3 Turn OpenFeature into a collapsible sidebar folder: index (web provider) + react + angular subpages, en + es; /sdks/openfeature URL unchanged
+- [x] T4 Verify lint, types, build, sidebar and URLs
 
 ## Evidence
 
 - T1+T2 commit ee2d7c0. lint, types:check and build pass (64/64 pages); en/es pages render React, Angular and the ecosystem link.
+- T3+T4 commit 83ce401. lint, types:check, build pass (76/76 pages); en/es /sdks/openfeature, /react, /angular all 200 with unchanged index URL; page tree shows OpenFeature folder in both locales; sitemap lists all 6 URLs.
+
+## Follow-up (out of scope)
+
+- English sidebar is server-rendered with the SDKs folder collapsed (aria-expanded=false, no SDK links in the aside) on every SDK page. Pre-existing: production docs.flagward.com/sdks/react shows the same; /es renders it open. Likely the active page is not detected for EN pages prerendered under /en/.
