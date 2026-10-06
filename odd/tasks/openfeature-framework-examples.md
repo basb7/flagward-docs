@@ -20,3 +20,7 @@ Out of scope: server-side SDKs (no server provider exists), OFREP.
 
 - [x] T1 Add listing link + React and Angular examples (en + es)
 - [x] T2 Verify lint, types and build
+
+## Evidence
+
+- T1+T2 commit ee2d7c0. lint, types:check and build pass (64/64 pages); en/es pages render React, Angular and the ecosystem link.
