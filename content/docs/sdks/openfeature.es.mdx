@@ -6,7 +6,8 @@ description: '@flagward/openfeature-web — un provider de OpenFeature para el n
 [OpenFeature](https://openfeature.dev) es la API estándar de la CNCF para
 feature flags. `@flagward/openfeature-web` es un provider para su SDK web:
 una aplicación que ya evalúa flags con OpenFeature se cambia a Flagward
-cambiando el provider, y nada más.
+cambiando el provider, y nada más. Flagward figura en el [ecosistema de
+OpenFeature](https://openfeature.dev/ecosystem?instant_search%5Bquery%5D=flagward).
 
 Si tu aplicación no usa OpenFeature, el adaptador de Flagward para tu
 framework es la opción más simple.
@@ -117,10 +118,89 @@ inalcanzable — `setProviderAndWait` rechaza, el provider queda en estado
 
 ## Frameworks
 
-Los SDKs propios de OpenFeature se construyen sobre este provider:
+Los SDKs propios de OpenFeature se construyen sobre este provider.
 
-- React: `@openfeature/react-sdk`
-- Angular: `@openfeature/angular-sdk`
+### React
+
+```bash
+npm install @openfeature/react-sdk @openfeature/web-sdk @flagward/openfeature-web
+```
+
+```tsx
+import { OpenFeature, OpenFeatureProvider, useBooleanFlagValue } from '@openfeature/react-sdk';
+import { FlagwardWebProvider } from '@flagward/openfeature-web';
+
+// Once, at startup. The React SDK re-renders when the provider is ready.
+OpenFeature.setProvider(
+  new FlagwardWebProvider({ apiKey: 'your-environment-api-key' }),
+);
+
+function App() {
+  return (
+    <OpenFeatureProvider>
+      <Checkout />
+    </OpenFeatureProvider>
+  );
+}
+
+function Checkout() {
+  const newCheckout = useBooleanFlagValue('new-checkout', false);
+  return newCheckout ? <NewCheckout /> : <OldCheckout />;
+}
+```
+
+Los componentes se vuelven a renderizar cuando una flag cambia en el
+dashboard (el `ConfigurationChanged` del provider) y cuando el contexto
+cambia con `OpenFeature.setContext`. También están disponibles `useFlag`,
+`useStringFlagValue` y `useBooleanFlagDetails`; consulta la
+[documentación del SDK de React](https://openfeature.dev/docs/reference/technologies/client/web/react).
+
+### Angular
+
+Angular 16 o posterior. Angular no tiene un adaptador de Flagward, así que
+esta es la forma de usar Flagward en Angular.
+
+```bash
+npm install @openfeature/angular-sdk @openfeature/web-sdk @flagward/openfeature-web
+```
+
+```ts
+// app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideOpenFeature } from '@openfeature/angular-sdk';
+import { FlagwardWebProvider } from '@flagward/openfeature-web';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideOpenFeature({
+      provider: new FlagwardWebProvider({ apiKey: 'your-environment-api-key' }),
+      context: { targetingKey: 'user-123' },
+    }),
+  ],
+};
+```
+
+```ts
+// checkout.component.ts
+import { Component } from '@angular/core';
+import { BooleanFeatureFlagDirective } from '@openfeature/angular-sdk';
+
+@Component({
+  selector: 'app-checkout',
+  imports: [BooleanFeatureFlagDirective],
+  template: `
+    <new-checkout *booleanFeatureFlag="'new-checkout'; default: false; else: oldCheckout" />
+    <ng-template #oldCheckout><old-checkout /></ng-template>
+  `,
+})
+export class CheckoutComponent {}
+```
+
+Las plantillas se actualizan cuando cambia una flag o el contexto. Para el
+acceso programático existe `FeatureFlagService`; consulta la
+[documentación del SDK de Angular](https://openfeature.dev/docs/reference/technologies/client/web/angular).
+
+### Otros frameworks
 
 Vue, Solid y Svelte no tienen SDK de OpenFeature. Ahí usas
 `@openfeature/web-sdk` directamente, o el adaptador de Flagward para el
