@@ -1,5 +1,5 @@
 ---
-title: OpenFeature
+title: Web provider
 description: '@flagward/openfeature-web — an OpenFeature provider for the browser.'
 ---
 
@@ -117,89 +117,8 @@ evaluation answers with its default.
 
 ## Frameworks
 
-OpenFeature's own SDKs build on this provider.
-
-### React
-
-```bash
-npm install @openfeature/react-sdk @openfeature/web-sdk @flagward/openfeature-web
-```
-
-```tsx
-import { OpenFeature, OpenFeatureProvider, useBooleanFlagValue } from '@openfeature/react-sdk';
-import { FlagwardWebProvider } from '@flagward/openfeature-web';
-
-// Once, at startup. The React SDK re-renders when the provider is ready.
-OpenFeature.setProvider(
-  new FlagwardWebProvider({ apiKey: 'your-environment-api-key' }),
-);
-
-function App() {
-  return (
-    <OpenFeatureProvider>
-      <Checkout />
-    </OpenFeatureProvider>
-  );
-}
-
-function Checkout() {
-  const newCheckout = useBooleanFlagValue('new-checkout', false);
-  return newCheckout ? <NewCheckout /> : <OldCheckout />;
-}
-```
-
-Components re-render when a flag changes in the dashboard (the provider's
-`ConfigurationChanged`) and when the context changes through
-`OpenFeature.setContext`. `useFlag`, `useStringFlagValue` and
-`useBooleanFlagDetails` are also available; see the
-[React SDK docs](https://openfeature.dev/docs/reference/technologies/client/web/react).
-
-### Angular
-
-Angular 16 or later. Angular has no Flagward adapter, so this is the way to
-use Flagward in Angular.
-
-```bash
-npm install @openfeature/angular-sdk @openfeature/web-sdk @flagward/openfeature-web
-```
-
-```ts
-// app.config.ts
-import { ApplicationConfig } from '@angular/core';
-import { provideOpenFeature } from '@openfeature/angular-sdk';
-import { FlagwardWebProvider } from '@flagward/openfeature-web';
-
-export const appConfig: ApplicationConfig = {
-  providers: [
-    provideOpenFeature({
-      provider: new FlagwardWebProvider({ apiKey: 'your-environment-api-key' }),
-      context: { targetingKey: 'user-123' },
-    }),
-  ],
-};
-```
-
-```ts
-// checkout.component.ts
-import { Component } from '@angular/core';
-import { BooleanFeatureFlagDirective } from '@openfeature/angular-sdk';
-
-@Component({
-  selector: 'app-checkout',
-  imports: [BooleanFeatureFlagDirective],
-  template: `
-    <new-checkout *booleanFeatureFlag="'new-checkout'; default: false; else: oldCheckout" />
-    <ng-template #oldCheckout><old-checkout /></ng-template>
-  `,
-})
-export class CheckoutComponent {}
-```
-
-Templates update when a flag or the context changes. For programmatic access
-there is `FeatureFlagService`; see the
-[Angular SDK docs](https://openfeature.dev/docs/reference/technologies/client/web/angular).
-
-### Other frameworks
+OpenFeature's own SDKs build on this provider: see [React](/sdks/openfeature/react) and
+[Angular](/sdks/openfeature/angular).
 
 Vue, Solid and Svelte have no OpenFeature SDK. There you use
 `@openfeature/web-sdk` directly, or the Flagward adapter for the framework.

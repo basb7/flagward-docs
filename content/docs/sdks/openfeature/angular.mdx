@@ -1,0 +1,53 @@
+---
+title: Angular
+description: 'Use Flagward with @openfeature/angular-sdk.'
+---
+
+This page uses the Flagward web provider through OpenFeature's Angular SDK. See the [web provider](/sdks/openfeature) for provider options, context and reasons.
+
+Angular 16 or later. Angular has no Flagward adapter, so this is the way to
+use Flagward in Angular.
+
+## Installation
+
+```bash
+npm install @openfeature/angular-sdk @openfeature/web-sdk @flagward/openfeature-web
+```
+
+## Usage
+
+```ts
+// app.config.ts
+import { ApplicationConfig } from '@angular/core';
+import { provideOpenFeature } from '@openfeature/angular-sdk';
+import { FlagwardWebProvider } from '@flagward/openfeature-web';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideOpenFeature({
+      provider: new FlagwardWebProvider({ apiKey: 'your-environment-api-key' }),
+      context: { targetingKey: 'user-123' },
+    }),
+  ],
+};
+```
+
+```ts
+// checkout.component.ts
+import { Component } from '@angular/core';
+import { BooleanFeatureFlagDirective } from '@openfeature/angular-sdk';
+
+@Component({
+  selector: 'app-checkout',
+  imports: [BooleanFeatureFlagDirective],
+  template: `
+    <new-checkout *booleanFeatureFlag="'new-checkout'; default: false; else: oldCheckout" />
+    <ng-template #oldCheckout><old-checkout /></ng-template>
+  `,
+})
+export class CheckoutComponent {}
+```
+
+Templates update when a flag or the context changes. For programmatic access
+there is `FeatureFlagService`; see the
+[Angular SDK docs](https://openfeature.dev/docs/reference/technologies/client/web/angular).

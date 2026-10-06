@@ -1,0 +1,43 @@
+---
+title: React
+description: 'Use Flagward with @openfeature/react-sdk.'
+---
+
+This page uses the Flagward web provider through OpenFeature's React SDK. See the [web provider](/sdks/openfeature) for provider options, context and reasons.
+
+## Installation
+
+```bash
+npm install @openfeature/react-sdk @openfeature/web-sdk @flagward/openfeature-web
+```
+
+## Usage
+
+```tsx
+import { OpenFeature, OpenFeatureProvider, useBooleanFlagValue } from '@openfeature/react-sdk';
+import { FlagwardWebProvider } from '@flagward/openfeature-web';
+
+// Once, at startup. The React SDK re-renders when the provider is ready.
+OpenFeature.setProvider(
+  new FlagwardWebProvider({ apiKey: 'your-environment-api-key' }),
+);
+
+function App() {
+  return (
+    <OpenFeatureProvider>
+      <Checkout />
+    </OpenFeatureProvider>
+  );
+}
+
+function Checkout() {
+  const newCheckout = useBooleanFlagValue('new-checkout', false);
+  return newCheckout ? <NewCheckout /> : <OldCheckout />;
+}
+```
+
+Components re-render when a flag changes in the dashboard (the provider's
+`ConfigurationChanged`) and when the context changes through
+`OpenFeature.setContext`. `useFlag`, `useStringFlagValue` and
+`useBooleanFlagDetails` are also available; see the
+[React SDK docs](https://openfeature.dev/docs/reference/technologies/client/web/react).
